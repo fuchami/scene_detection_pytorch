@@ -7,6 +7,7 @@ My research theme  
 + [ ]: DataLoaderの実装
 + [ ]: SiameseNetの実装
 + [ ]: 学習フェーズの実装
++ [ ]: 学習フェーズの実装
 
 
 # Code Structure
@@ -16,3 +17,11 @@ My research theme  
   - データのEDAを行う
 
 ## Reference 
+・PyTorch transforms/Dataset/DataLoaderの基本動作を確認する 
+https://qiita.com/takurooo/items/e4c91c5d78059f92e76d
+・pytorch siamese-triplet
+https://github.com/adambielski/siamese-triplet
+・PyTorch/TorchVisionで複数の入力をモデルに渡したいケース
+https://blog.shikoan.com/torchvision-multiple-inputs/
+・pytorch siamese
+https://vaaaaaanquish.hatenablog.com/entry/2019/02/23/214036

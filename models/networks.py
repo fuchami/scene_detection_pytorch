@@ -31,6 +31,7 @@ class SiameseNet(nn.Module):
     def __init__(self, image_extractor):
         super(SiameseNet, self).__init__()
         self.image_extractor = image_extractor
+        self.image_extractor.eval() # 評価用に固定すべき?
 
         self.fc = nn.Sequential(nn.Linear(2048, 512), nn.PReLU(),
                                 nn.Linear(512, 30), nn.PReLU(),
