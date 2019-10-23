@@ -1,2 +1,4 @@
 /BBC_Planet_Earth_Dataset/
 .DS_Store
+
+*.pyc

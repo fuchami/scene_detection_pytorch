@@ -3,11 +3,12 @@ My research theme  
 
 # TODO List
 + [x]: 特徴抽出モデルまで
-+ [ ]: データの前処理
-+ [ ]: DataLoaderの実装
-+ [ ]: SiameseNetの実装
++ [x]: データの前処理
++ [x]: DataLoaderの実装
++ [x]: SiameseNetの実装
++ [x]: 学習フェーズの実装
 + [ ]: 学習フェーズの実装
-+ [ ]: 学習フェーズの実装
+
 
 
 # Code Structure

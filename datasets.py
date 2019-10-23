@@ -21,7 +21,7 @@ class MultiModalDataset(Dataset):
         self.train_df = pd.read_csv('./BBC_Planet_Earth_Dataset/dataset/annotator_0/01_From_Pole_to_Pole.csv')
         self.transform = transform
 
-        self.labels = list(self.train_df.scene_id.unique())
+        self.labels = list(self.train_df.scene_id)
         self.labels_set = set(self.train_df.scene_id.unique())
         self.label_to_indices = {label: np.where(self.train_df.scene_id == label)[0]
                                 for label in self.labels_set}
@@ -39,9 +39,9 @@ class MultiModalDataset(Dataset):
         print('start_sec: ', len(self.start_sec))
         print('end_sec: ', len(self.end_sec))
         print('shot_sec', len(self.shot_sec))
-        print('image', len(self.images))
+        print('images', len(self.images))
+        print('labels', len(self.labels))
         print('============================')
-
     
     def image_open(self, t):
         image = Image.open(t)
@@ -54,7 +54,7 @@ class MultiModalDataset(Dataset):
     def __getitem__(self, index):
         if self.train:
             target = np.random.randint(0,2) # 0or1をランダムに選択
-            img1, label1 = self.images[index], self.labels[index]
+            img1, label1 = self.images[index], self.scene_id[index]
             timestamp1 = [self.start_sec[index], self.end_sec[index], self.shot_sec[index]]
 
             label_count = len(self.label_to_indices[label1])
