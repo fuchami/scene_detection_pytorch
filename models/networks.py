@@ -1,5 +1,6 @@
 # coding:utf-8
 
+import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torchvision.models as models
@@ -33,14 +34,17 @@ class SiameseNet(nn.Module):
         self.image_extractor = image_extractor
         self.image_extractor.eval() # 評価用に固定すべき?
 
-        self.fc = nn.Sequential(nn.Linear(2048, 512), nn.PReLU(),
+        self.fc = nn.Sequential(nn.Linear(2048+3, 512), nn.PReLU(), # 画像特徴+Timestamp
                                 nn.Linear(512, 30), nn.PReLU(),
                                 nn.Linear(30, 1))
     
-    def forward(self, x1, x2):
-        output1 = self.image_extractor(x1)
+    def forward(self, img1, timestamp1, img2, timestamp2):
+        output1 = self.image_extractor(img1)
+        output1 = torch.cat([output1,timestamp1], dim=1)
         output1 = self.fc(output1)
-        output2 = self.image_extractor(x2)
+
+        output2 = self.image_extractor(img2)
+        output2 = torch.cat([output2,timestamp2], dim=1)
         output2 = self.fc(output2)
 
         return output1, output2
@@ -53,4 +57,3 @@ if __name__ == "__main__":
     image_extractor = ImageExtractor()
     siamesenet = SiameseNet(image_extractor)
     print(siamesenet)
-    summary(siamesenet, [(3,224,224), (3,224,224)])

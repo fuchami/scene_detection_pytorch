@@ -38,7 +38,10 @@ if swt: # 1回やれば十分なので
 
 #%%
 class MultimodalData(object):
-    def __init__(self,annotator,movie_name):
+    def __init__(self,annotator,movie_name, image=True, audio=False, text=False):
+        self.image = image
+        self.audio = audio
+        self.test = text
         self.fps = 25
         self.episode = movie_name.split('_', 1)[0] # 01~11の値
         print(self.episode)
@@ -72,7 +75,7 @@ class MultimodalData(object):
         self.scene_data = self.load_scene_txt(scene_txt_path)
 
         """ dump shot audio file """
-        self.sound = AudioSegment.from_file(audio_path, format="wav")
+        if audio: self.sound = AudioSegment.from_file(audio_path, format="wav")
 
         """ make dataset """
         self.make_dataset()
@@ -83,8 +86,8 @@ class MultimodalData(object):
             "scene_id":self.scene_id,
             "start_frame":self.start_frame,
             "end_frame":self.end_frame,
-            "img":self.image_data,
-            "audio":self.audio_data,
+            "image":self.image_data,
+            # "audio":self.audio_data,
             "start_sec":self.start_sec,
             "end_sec":self.end_sec,
             "middle_sec":self.middle_sec,
@@ -132,8 +135,8 @@ class MultimodalData(object):
             self.middle_sec.append(middle_sec)
             self.shot_sec.append(shot_sec)
 
-            self.image_data.append(f'./BBC_Planet_Earth_Dataset/frame/bbc_{self.episode}/{middle_frame}.jpg')
-            self.audio_data.append(self.dub_audio(shot_id,middle_sec*1000))
+            if self.image: self.image_data.append(f'./BBC_Planet_Earth_Dataset/frame/bbc_{self.episode}/{middle_frame}.jpg')
+            if self.audio: self.audio_data.append(self.dub_audio(shot_id,middle_sec*1000))
             """ TODO: text datat"""
 
             shot_id += 1
