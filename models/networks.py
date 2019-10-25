@@ -5,7 +5,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torchvision.models as models
 
-from torchsummary import summary
+# from torchsummary import summary
 
 class ImageExtractor(nn.Module):
     def __init__(self, model='res'):
