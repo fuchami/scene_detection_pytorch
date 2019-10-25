@@ -49,8 +49,11 @@ class SiameseNet(nn.Module):
 
         return output1, output2
 
-    def get_embedding(self, x):
-        return self.image_extractor(x)
+    def get_embedding(self, img, timestamp):
+        x = self.image_extractor(img)
+        x = torch.cat([x, timestamp], dim=1)
+        x =  self.fc(x)
+        return x
 
 if __name__ == "__main__":
 

@@ -1,8 +1,9 @@
 # coding:utf-8
 
 import numpy as np
-import argparse
+import argparse,os
 import matplotlib.pyplot as plt
+from datetime import datetime
 
 import torch
 import torchvision
@@ -10,16 +11,29 @@ import torch.optim as optim
 from torch.optim import lr_scheduler
 from torch.autograd import Variable
 from torchvision import transforms
+from torch.utils.tensorboard import SummaryWriter
 
 from trainer import fit
 from losses import ContrastiveLoss
 from datasets import MultiModalDataset
 from models.networks import SiameseNet,ImageExtractor
+from utils import extract_embeddings,plot_embeddings
 
-cuda = torch.cuda.is_available()
 
 def main(args):
-    """ setting losg """
+    """ define device """
+    cuda = torch.cuda.is_available()
+    print('run on cuda?: ', cuda)
+
+    """ setting logs """
+    now_time = datetime.now().strftime("%y%m%d_%H%M")
+    log_dir_name = f'./logs/{now_time}{args.model}_{args.images}_{args.audio}_{args.text}_'
+    log_dir_name += f'epoch{args.epochs}batch{args.batchsize}lr{args.learning_rate}extract_{args.img_model}_'
+    log_dir_name += f'margin{args.margin}/'
+    print('log_dir_name:', log_dir_name)
+    
+    if not os.path.exists(log_dir_name): os.makedirs(log_dir_name)
+    # writer = SummaryWriter(log_dir_name)
 
     """ load dataset """
     normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
@@ -53,17 +67,25 @@ def main(args):
     """ train """
     fit(train_loader, None, model, loss_fn, optimizer,scheduler, 
             n_epochs, cuda, log_interval)
+    
+    train_embeddings_baseline, train_labels_baseline = extract_embeddings(train_loader, model, cuda)
+    plot_embeddings(train_embeddings_baseline, train_labels_baseline)
 
-    return
+    """ eval """
+    torch.save(model.state_dict(), log_dir_name+'weight.pth')
+
+    """ end """
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='')
+    parser.add_argument('--model', default='siamese')
     parser.add_argument('--images',  '-i', default=True)
     parser.add_argument('--audio',  '-a', default=False)
     parser.add_argument('--text',  '-t', default=False)
 
-    parser.add_argument('--epochs', '-e', default=10)
-    parser.add_argument('--batchsize', '-b', default=64)
+    parser.add_argument('--epochs', '-e', default=1)
+    parser.add_argument('--batchsize', '-b', default=32)
     parser.add_argument('--learning_rate', '-r', default=1e-2)
     parser.add_argument('--log_interval', '-l', default=50)
     parser.add_argument('--img_model', default='res')
