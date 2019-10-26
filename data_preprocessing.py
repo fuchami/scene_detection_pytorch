@@ -20,7 +20,7 @@ import numpy as np
 import pandas as pd
 
 #%% dump wav file
-movie_path_list = sorted(glob.glob("/media/futami/HDD1/Multimodal_Scene_Detection/BBC_Planet_Earth_Dataset/src/*.mp4"))
+movie_path_list = sorted(glob.glob("./BBC_Planet_Earth_Dataset/src/*.mp4"))
 save_dir = './BBC_Planet_Earth_Dataset/audio/src/'
 if not os.path.exists(save_dir): os.makedirs(save_dir) 
 
@@ -38,7 +38,7 @@ if swt: # 1回やれば十分なので
 
 #%%
 class MultimodalData(object):
-    def __init__(self,annotator,movie_name, image=True, audio=False, text=False):
+    def __init__(self,annotator,movie_name, image=True, audio=True, text=False):
         self.image = image
         self.audio = audio
         self.test = text
@@ -87,7 +87,7 @@ class MultimodalData(object):
             "start_frame":self.start_frame,
             "end_frame":self.end_frame,
             "image":self.image_data,
-            # "audio":self.audio_data,
+            "audio":self.audio_data,
             "start_sec":self.start_sec,
             "end_sec":self.end_sec,
             "middle_sec":self.middle_sec,

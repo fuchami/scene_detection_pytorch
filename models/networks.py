@@ -36,7 +36,7 @@ class SiameseNet(nn.Module):
 
         self.fc = nn.Sequential(nn.Linear(2048+3, 512), nn.PReLU(), # 画像特徴+Timestamp
                                 nn.Linear(512, 30), nn.PReLU(),
-                                nn.Linear(30, 1))
+                                nn.Linear(30, 2))
     
     def forward(self, img1, timestamp1, img2, timestamp2):
         output1 = self.image_extractor(img1)

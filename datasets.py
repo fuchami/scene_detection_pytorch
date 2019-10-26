@@ -85,7 +85,7 @@ class MultiModalDataset(Dataset):
         timestamp1 = torch.tensor(timestamp1)
         timestamp2 = torch.tensor(timestamp2)
         
-        return (img1,timestamp1,img2,timestamp2), target
+        return (img1,timestamp1,img2,timestamp2), target, label1
 
     def __len__(self):
         return len(self.images)

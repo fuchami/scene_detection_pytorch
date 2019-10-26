@@ -33,7 +33,7 @@ def main(args):
     print('log_dir_name:', log_dir_name)
     
     if not os.path.exists(log_dir_name): os.makedirs(log_dir_name)
-    # writer = SummaryWriter(log_dir_name)
+    writer = SummaryWriter(log_dir_name)
 
     """ load dataset """
     normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
@@ -54,6 +54,8 @@ def main(args):
     """ build model """
     image_extractor = ImageExtractor(model=args.img_model)
     model = SiameseNet(image_extractor)
+    # images, labels = next(iter(train_loader))
+    # writer.add_graph(model, images)
     if cuda: model.cuda()
 
     """ define parameters """
@@ -65,17 +67,15 @@ def main(args):
     log_interval = args.log_interval
 
     """ train """
-    fit(train_loader, None, model, loss_fn, optimizer,scheduler, 
-            n_epochs, cuda, log_interval)
+    fit(train_loader, None, model, loss_fn, optimizer,scheduler, n_epochs, cuda, log_interval, writer)
     
     train_embeddings_baseline, train_labels_baseline = extract_embeddings(train_loader, model, cuda)
-    plot_embeddings(train_embeddings_baseline, train_labels_baseline)
+    plot_embeddings(train_embeddings_baseline, train_labels_baseline, log_dir_name)
 
     """ eval """
     torch.save(model.state_dict(), log_dir_name+'weight.pth')
 
     """ end """
-
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='')
@@ -84,10 +84,10 @@ if __name__ == "__main__":
     parser.add_argument('--audio',  '-a', default=False)
     parser.add_argument('--text',  '-t', default=False)
 
-    parser.add_argument('--epochs', '-e', default=1)
-    parser.add_argument('--batchsize', '-b', default=32)
+    parser.add_argument('--epochs', '-e', default=10, type=int)
+    parser.add_argument('--batchsize', '-b', default=32, type=int)
     parser.add_argument('--learning_rate', '-r', default=1e-2)
-    parser.add_argument('--log_interval', '-l', default=50)
+    parser.add_argument('--log_interval', '-l', default=50, type=int)
     parser.add_argument('--img_model', default='res')
     parser.add_argument('--margin', '-m', default=1.)
 

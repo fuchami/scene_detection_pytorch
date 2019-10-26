@@ -2,7 +2,7 @@ import torch
 import numpy as np
 
 def fit(train_loader, val_loader, model, loss_fn, optimizer, scheduler,
-        n_epochs, cuda, log_interval, metrics=[], start_epoch=0):
+        n_epochs, cuda, log_interval, writer, metrics=[], start_epoch=0):
     
     for epoch in range(0, start_epoch):
         scheduler.step()
@@ -17,6 +17,9 @@ def fit(train_loader, val_loader, model, loss_fn, optimizer, scheduler,
         message = 'Epoch: {}/{}. Train set: Average loss: {:.4f}'.format(epoch+1, n_epochs, train_loss)
         for metric in metrics:
             message += '\t{}: {}'.format(metric.name, metric.value())
+
+        """ logging tensorboard """
+        writer.add_scalar("train/loss", train_loss, epoch)
         
         # Test stage
         # TODO: あとで書く
@@ -33,7 +36,7 @@ def train_epoch(train_loader, model, loss_fn, optimizer, cuda,
     losses = []
     total_loss = 0
 
-    for batch_idx, (data, target) in enumerate(train_loader):
+    for batch_idx, (data, target, _) in enumerate(train_loader):
         target = target if len(target) > 0 else None
         if not type(data) in (tuple, list):
             data = (data,)
@@ -59,6 +62,7 @@ def train_epoch(train_loader, model, loss_fn, optimizer, cuda,
         total_loss += loss.item()
         loss.backward()
         optimizer.step()
+
 
         for metric in metrics:
             metric(outputs, target, loss_outputs)
