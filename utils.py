@@ -4,12 +4,14 @@ import numpy as np
 import matplotlib.pyplot as plt
 import torch
 
+chars = "^<>vo+d"
+markers = [chars[i%7] for i in range(100)]
 
 def plot_embeddings(embeddings, targets, save_path, xlim=None, ylim=None):
-    plt.figure(figsize=(10,10))
+    plt.figure(figsize=(20,20))
     for i in range(int(max(targets))+1):
         inds = np.where(targets==i)[0]
-        plt.scatter(embeddings[inds,0], embeddings[inds,1], alpha=0.5, label=i)
+        plt.scatter(embeddings[inds,0], embeddings[inds,1], alpha=0.5, label=i, marker=markers[i])
     if xlim:
         plt.xlim(xlim[0], xlim[1])
     if ylim:

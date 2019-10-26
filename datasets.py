@@ -1,6 +1,7 @@
 # coding:utf-8
 import numpy as np
 import pandas as pd
+import librosa, scipy
 from PIL import Image
 
 import torch
@@ -10,7 +11,7 @@ from torchvision import transforms
 
 
 class MultiModalDataset(Dataset):
-    def __init__(self, csv_path=None, transform=None, train=True, image=True, audio=False):
+    def __init__(self, csv_path=None, transform=None, train=True, image=True, audio=True, text=False):
         """
         1. Image
         2. TimeStamp( start_sec, end_sec, shot_sec)
@@ -51,12 +52,19 @@ class MultiModalDataset(Dataset):
             return image
         else:
             return self.transform(image)
+        
+    def audio_open(self, t):
+        y, fs = librosa.load(t)
+        melsp = librosa.feature.melspectrogram(y=y, sr=fs)
+
+        print(melsp.shape)
+        return torch.tensor(melsp)
     
     def __getitem__(self, index):
         if self.train:
             target = np.random.randint(0,2) # 0or1をランダムに選択
             img1, label1 = self.images[index], self.labels[index]
-            timestamp1 = [self.start_sec[index], self.end_sec[index], self.shot_sec[index]]
+            timestamp1 = [self.shot_sec[index]]
 
             label_count = len(self.label_to_indices[label1])
 
@@ -75,7 +83,8 @@ class MultiModalDataset(Dataset):
                     siamese_index = np.random.choice(self.label_to_indices[label1])
 
             img2 = self.images[siamese_index]
-            timestamp2 = [self.start_sec[siamese_index], self.end_sec[siamese_index], self.shot_sec[siamese_index]]
+            timestamp2 = [self.shot_sec[siamese_index]]
+
         else:
             # TODO:テストデータ用の処理を書く
             pass
@@ -84,8 +93,19 @@ class MultiModalDataset(Dataset):
         img2 = self.image_open(img2)
         timestamp1 = torch.tensor(timestamp1)
         timestamp2 = torch.tensor(timestamp2)
+
+        if self.audio_load:
+            aud1 = self.audios[index]
+            aud1 = self.audio_open(aud1)
+            aud2 = self.audios[siamese_index]
+            aud2 = self.audio_open(aud2)
+
         
-        return (img1,timestamp1,img2,timestamp2), target, label1
+        if self.audio_load:
+            return (img1,aud2,timestamp1,img2,aud2,timestamp2), target, label1
+        else:
+            return (img1,timestamp1,img2,timestamp2), target, label1
+
 
     def __len__(self):
         return len(self.images)

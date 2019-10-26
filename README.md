@@ -3,12 +3,12 @@ My research theme  
 
 # TODO List
 + [x]: 特徴抽出モデルまで
-+ [x]: データの前処理
++ [ ]: データの前処理
 + [x]: DataLoaderの実装
 + [x]: SiameseNetの実装
++ [ ]: TripletNetの実装
 + [x]: 学習フェーズの実装
-+ [ ]: 学習フェーズの実装
-
++ [ ]: tensorboard Embedding
 
 
 # Code Structure
