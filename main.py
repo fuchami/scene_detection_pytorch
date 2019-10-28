@@ -27,7 +27,7 @@ def main(args):
 
     """ setting logs """
     now_time = datetime.now().strftime("%y%m%d_%H%M")
-    log_dir_name = f'./logs/{now_time}{args.model}_{args.images}_{args.audio}_{args.text}_'
+    log_dir_name = f'./logs/{now_time}{args.model}_{args.images}_{args.timestamp}_{args.audio}_{args.text}_'
     log_dir_name += f'epoch{args.epochs}batch{args.batchsize}lr{args.learning_rate}extract_{args.img_model}_'
     log_dir_name += f'{args.optimizer}_margin{args.margin}/'
     print('log_dir_name:', log_dir_name)
@@ -44,7 +44,7 @@ def main(args):
                                     normalize])
     
     train_dataset = MultiModalDataset(csv_path=None, transform=transform, train=True, 
-                                        image=args.images, audio=args.audio)
+                                    image=args.images, timestamp=args.timestamp, audio=args.audio)
     kwards = {'num_workers':1, 'pin_memory': True} if cuda else {}
     
     train_loader = torch.utils.data.DataLoader(train_dataset, 
@@ -88,6 +88,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='')
     parser.add_argument('--model', default='siamese')
     parser.add_argument('--images',  '-i', default=True)
+    parser.add_argument('--timestamp',  '-s', default=True)
     parser.add_argument('--audio',  '-a', default=True)
     parser.add_argument('--text',  '-t', default=False)
 

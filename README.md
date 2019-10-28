@@ -2,14 +2,13 @@
 My research theme  
 
 # TODO List
-+ [x]: 特徴抽出モデルまで
-+ [ ]: データの前処理
++ [ ]: textの前処理
++ [ ]: AudioCNNの実装
++ [ ]: TripletNetの実装
++ [ ]: tensorboard Embedding
 + [x]: DataLoaderの実装
 + [x]: SiameseNetの実装
-+ [ ]: TripletNetの実装
 + [x]: 学習フェーズの実装
-+ [ ]: tensorboard Embedding
-
 
 # Code Structure
 - **data_preprocessing.py**

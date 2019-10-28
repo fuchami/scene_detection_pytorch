@@ -28,15 +28,42 @@ class ImageExtractor(nn.Module):
         x = x.view(x.size()[0], -1)
         return x
 
+class AudioCNN(nn.Module):
+    def __init__(self):
+        super(AudioCNN, self).__init__()
+        self.layer1 = nn.Sequential(
+            nn.Conv2d(1, 32, kernel_size=5, padding=2),
+            nn.BatchNorm2d(32),
+            nn.ReLU(),
+            nn.MaxPool2d(2))
+
+        self.layer2 = nn.Sequential(
+            nn.Conv2d(32, 64, kernel_size=5, padding=2),
+            nn.BatchNorm2d(64),
+            nn.ReLU(),
+            nn.MaxPool2d(2))
+
+        # self.fc = nn.Linear()
+    
+    def forward(self, x):
+        x = self.layer1(x)
+        x = self.layer2(x)
+        print(x.size())
+        return
+
 class SiameseNet(nn.Module):
-    def __init__(self, image_extractor):
+    def __init__(self, image_extractor, audio=False):
         super(SiameseNet, self).__init__()
         self.image_extractor = image_extractor
         self.image_extractor.eval() # 評価用に固定すべき?
+        self.audio_feature = True if audio else False
 
-        self.fc = nn.Sequential(nn.Linear(2048+3, 512), nn.PReLU(), # 画像特徴+Timestamp
-                                nn.Linear(512, 30), nn.PReLU(),
-                                nn.Linear(30, 2))
+        self.fc = nn.Sequential(nn.Linear(2048+1, 512), nn.PReLU(), nn.Dropout(0.5), # 画像特徴+Timestamp
+                                nn.Linear(512, 128), nn.PReLU(), nn.Dropout(0.5),
+                                nn.Linear(128, 2))
+        
+        """ build audio cnn """
+        if self.audio_feature: audio_cnn = AudioCNN()
     
     def forward(self, img1, timestamp1, img2, timestamp2):
         output1 = self.image_extractor(img1)
@@ -56,7 +83,17 @@ class SiameseNet(nn.Module):
         return x
 
 if __name__ == "__main__":
+    audiocnn = AudioCNN()
+    print(audiocnn)
 
+    x = torch.rand(128, 431)
+    out = audiocnn(x)
+    print('out size:', out.size())
+
+
+
+    """
     image_extractor = ImageExtractor()
     siamesenet = SiameseNet(image_extractor)
     print(siamesenet)
+    """
