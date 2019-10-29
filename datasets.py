@@ -12,7 +12,7 @@ from torchvision import transforms
 
 class MultiModalDataset(Dataset):
     def __init__(self, csv_path=None, transform=None, train=True,
-                    image=True, timestamp=True, audio=False, text=False):
+                    image=False, timestamp=False, audio=False, text=False):
         """
         1. Image
         2. TimeStamp( start_sec, end_sec, shot_sec)
@@ -61,8 +61,10 @@ class MultiModalDataset(Dataset):
         y, fs = librosa.load(t)
         melsp = librosa.feature.melspectrogram(y=y, sr=fs)
 
-        print(melsp.shape)
-        return torch.tensor(melsp)
+        # (1, 128, 431)のtensorへ
+        melsp = torch.unsqueeze(torch.tensor(melsp), 0)
+        print(melsp.size())
+        return melsp
     
     def __getitem__(self, index):
         if self.train:
@@ -126,11 +128,11 @@ class MultiModalDataset(Dataset):
             data1_list.append(timestamp1)
             data2_list.append(timestamp2)
         
-        dataset = set(data1_list + data2_list)
+        dataset = tuple(data1_list + data2_list)
         return dataset, target, label1
 
     def __len__(self):
-        return len(self.images)
+        return len(self.labels)
 
 
 if __name__ == "__main__":
@@ -143,4 +145,4 @@ if __name__ == "__main__":
         normalize])
 
     multimodaldataset = MultiModalDataset(transform=transform ,train=True,
-                                            image=False, audio=True, Timestamp=False)
+                                            image=False, audio=True, timestamp=False)

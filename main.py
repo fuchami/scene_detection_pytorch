@@ -16,7 +16,7 @@ from torch.utils.tensorboard import SummaryWriter
 from trainer import fit
 from losses import ContrastiveLoss
 from datasets import MultiModalDataset
-from models.networks import SiameseNet,ImageExtractor
+from models.networks import SiameseNet,ImageExtractor,AudioCNN
 from utils import extract_embeddings,plot_embeddings
 
 
