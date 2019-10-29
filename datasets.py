@@ -12,18 +12,20 @@ from torchvision import transforms
 
 class MultiModalDataset(Dataset):
     def __init__(self, csv_path=None, transform=None, train=True,
-                    image=True, timestamp=True, audio=True, text=False):
+                    image=True, timestamp=True, audio=False, text=False):
         """
         1. Image
         2. TimeStamp( start_sec, end_sec, shot_sec)
         3. Audio
+        4. text
         """
+        self.train_df       = pd.read_csv('./BBC_Planet_Earth_Dataset/dataset/annotator_0/01_From_Pole_to_Pole.csv')
         self.train          = train # これでtrain/testの切り替えを行う
         self.transform      = transform
         self.image_load     = image
         self.timestamp_load = timestamp
         self.audio_load     = audio 
-        self.train_df       = pd.read_csv('./BBC_Planet_Earth_Dataset/dataset/annotator_0/01_From_Pole_to_Pole.csv')
+        self.text_load      = text 
 
         self.labels = list(self.train_df.scene_id)
         self.labels_set = set(self.train_df.scene_id.unique())
@@ -34,6 +36,7 @@ class MultiModalDataset(Dataset):
         self.start_sec = list(self.train_df.start_sec)
         self.end_sec   = list(self.train_df.end_sec)
         self.shot_sec  = list(self.train_df.shot_sec)
+
         if self.image_load: self.images = list(self.train_df.image.unique())
         if self.audio_load: self.audios = list(self.train_df.audio.unique())
 
@@ -64,7 +67,10 @@ class MultiModalDataset(Dataset):
     def __getitem__(self, index):
         if self.train:
             target = np.random.randint(0,2) # 0or1をランダムに選択
-            img1, label1 = self.images[index], self.labels[index]
+            label1 = self.labels[index]
+
+            if self.image_load: img1 = self.images[index]
+            if self.audio_load: aud1 = self.audios[index]
             if self.timestamp_load: timestamp1 = [self.shot_sec[index]]
 
             label_count = len(self.label_to_indices[label1])
@@ -83,7 +89,8 @@ class MultiModalDataset(Dataset):
                 while siamese_index == index:
                     siamese_index = np.random.choice(self.label_to_indices[label1])
 
-            img2 = self.images[siamese_index]
+            if self.image_load: img2 = self.images[siamese_index]
+            if self.audio_load: aud2 = self.audios[siamese_index]
             if self.timestamp_load: timestamp2 = [self.shot_sec[siamese_index]]
 
         else:
@@ -104,12 +111,23 @@ class MultiModalDataset(Dataset):
             aud1 = self.audio_open(aud1)
             aud2 = self.audios[siamese_index]
             aud2 = self.audio_open(aud2)
-        
-        if self.audio_load:
-            return (img1,aud2,timestamp1,img2,aud2,timestamp2), target, label1
-        else:
-            return (img1,timestamp1,img2,timestamp2), target, label1
 
+        """ return datasets """
+        data1_list = []
+        data2_list = []
+
+        if self.image_load:
+            data1_list.append(img1)
+            data2_list.append(img2)
+        if self.audio_load:
+            data1_list.append(aud1)
+            data2_list.append(aud2)
+        if self.timestamp_load:
+            data1_list.append(timestamp1)
+            data2_list.append(timestamp2)
+        
+        dataset = set(data1_list + data2_list)
+        return dataset, target, label1
 
     def __len__(self):
         return len(self.images)
@@ -124,4 +142,5 @@ if __name__ == "__main__":
         transforms.ToTensor(),
         normalize])
 
-    multimodaldataset = MultiModalDataset(transform=transform ,train=True)
+    multimodaldataset = MultiModalDataset(transform=transform ,train=True,
+                                            image=False, audio=True, Timestamp=False)

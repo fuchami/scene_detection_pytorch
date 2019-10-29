@@ -87,8 +87,8 @@ def main(args):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='')
     parser.add_argument('--model', default='siamese')
-    parser.add_argument('--images',  '-i', default=True)
-    parser.add_argument('--timestamp',  '-s', default=True)
+    parser.add_argument('--images',  '-i', default=False)
+    parser.add_argument('--timestamp',  '-s', default=False)
     parser.add_argument('--audio',  '-a', default=True)
     parser.add_argument('--text',  '-t', default=False)
 
