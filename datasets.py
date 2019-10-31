@@ -9,8 +9,7 @@ from torch.utils.data import Dataset
 from torch.utils.data.sampler import BatchSampler
 from torchvision import transforms
 
-
-class MultiModalDataset(Dataset):
+class SiameseMulti(Dataset):
     def __init__(self, csv_path=None, transform=None, train=True,
                     image=False, timestamp=False, audio=False, text=False):
         """
@@ -63,7 +62,7 @@ class MultiModalDataset(Dataset):
 
         # (1, 128, 431)のtensorへ
         melsp = torch.unsqueeze(torch.tensor(melsp), 0)
-        print(melsp.size())
+        # print(melsp.size())
         return melsp
     
     def __getitem__(self, index):
@@ -99,36 +98,33 @@ class MultiModalDataset(Dataset):
             # TODO:テストデータ用の処理を書く
             pass
 
+        data1 = {}
+        data2 = {}
+
         """ load image """
         if self.image_load:
             img1 = self.image_open(img1)
             img2 = self.image_open(img2)
-        """ load timestamp """
-        if self.timestamp_load:
-            timestamp1 = torch.tensor(timestamp1)
-            timestamp2 = torch.tensor(timestamp2)
+            data1['image'] = img1
+            data2['image'] = img2
+
         """ load audio """
         if self.audio_load:
             aud1 = self.audios[index]
             aud1 = self.audio_open(aud1)
             aud2 = self.audios[siamese_index]
             aud2 = self.audio_open(aud2)
+            data1['audio'] = aud1
+            data2['audio'] = aud2
 
-        """ return datasets """
-        data1_list = []
-        data2_list = []
-
-        if self.image_load:
-            data1_list.append(img1)
-            data2_list.append(img2)
-        if self.audio_load:
-            data1_list.append(aud1)
-            data2_list.append(aud2)
+        """ load timestamp """
         if self.timestamp_load:
-            data1_list.append(timestamp1)
-            data2_list.append(timestamp2)
+            timestamp1 = torch.tensor(timestamp1)
+            timestamp2 = torch.tensor(timestamp2)
+            data1['timestamp'] = timestamp1
+            data2['timestamp'] = timestamp2
         
-        dataset = tuple(data1_list + data2_list)
+        dataset = (data1, data2)
         return dataset, target, label1
 
     def __len__(self):
@@ -144,5 +140,5 @@ if __name__ == "__main__":
         transforms.ToTensor(),
         normalize])
 
-    multimodaldataset = MultiModalDataset(transform=transform ,train=True,
+    multimodaldataset = SiameseMulti(transform=transform ,train=True,
                                             image=False, audio=True, timestamp=False)

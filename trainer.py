@@ -40,8 +40,12 @@ def train_epoch(train_loader, model, loss_fn, optimizer, cuda,
         target = target if len(target) > 0 else None
         if not type(data) in (tuple, list):
             data = (data,)
+
         if cuda:
-            data = tuple(d.cuda() for d in data)
+            # めっちゃ見づらいけどすべてのデータをcuda用にしてる
+            for dict_ in data:
+                for d in dict_:
+                    dict_[d] = dict_[d].cuda()
             if target is not None:
                 target = target.cuda()
         

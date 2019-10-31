@@ -15,8 +15,9 @@ from torch.utils.tensorboard import SummaryWriter
 
 from trainer import fit
 from losses import ContrastiveLoss
-from datasets import MultiModalDataset
-from models.networks import SiameseNet,ImageExtractor,AudioCNN
+from datasets import SiameseMulti
+from models.networks import SiameseNet
+from models.embedding import EmbeddingNet
 from utils import extract_embeddings,plot_embeddings
 
 
@@ -27,13 +28,16 @@ def main(args):
 
     """ setting logs """
     now_time = datetime.now().strftime("%y%m%d_%H%M")
-    log_dir_name = f'./logs/{now_time}{args.model}_{args.images}_{args.timestamp}_{args.audio}_{args.text}_'
+    log_dir_name = f'./logs/{now_time}{args.model}_{args.image}_{args.audio}_{args.text}_{args.time}_'
     log_dir_name += f'epoch{args.epochs}batch{args.batchsize}lr{args.learning_rate}extract_{args.img_model}_'
     log_dir_name += f'{args.optimizer}_margin{args.margin}/'
     print('log_dir_name:', log_dir_name)
     
     if not os.path.exists(log_dir_name): os.makedirs(log_dir_name)
     writer = SummaryWriter(log_dir_name)
+
+    """ dump hyper parameters """
+    # TODO: ハイパラをtxtにdumpする
 
     """ load dataset """
     normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
@@ -43,8 +47,8 @@ def main(args):
                                     transforms.ToTensor(),
                                     normalize])
     
-    train_dataset = MultiModalDataset(csv_path=None, transform=transform, train=True, 
-                                    image=args.images, timestamp=args.timestamp, audio=args.audio)
+    train_dataset = SiameseMulti(csv_path=None, transform=transform, train=True, 
+                                    image=args.image, timestamp=args.time, audio=args.audio)
     kwards = {'num_workers':1, 'pin_memory': True} if cuda else {}
     
     train_loader = torch.utils.data.DataLoader(train_dataset, 
@@ -53,8 +57,7 @@ def main(args):
                                             **kwards)
 
     """ build model """
-    image_extractor = ImageExtractor(model=args.img_model)
-    model = SiameseNet(image_extractor, audio=args.audio)
+    model = SiameseNet(image=args.image, audio=args.audio, text=args.text, time=args.time)
     # images, labels = next(iter(train_loader))
     # writer.add_graph(model, images)
     if cuda: model.cuda()
@@ -76,20 +79,21 @@ def main(args):
     """ train """
     fit(train_loader, None, model, loss_fn, optimizer,scheduler, n_epochs, cuda, log_interval, writer)
     
-    train_embeddings_baseline, train_labels_baseline = extract_embeddings(train_loader, model, cuda)
-    plot_embeddings(train_embeddings_baseline, train_labels_baseline, log_dir_name)
+    # train_embeddings_baseline, train_labels_baseline = extract_embeddings(train_loader, model, cuda)
+    # plot_embeddings(train_embeddings_baseline, train_labels_baseline, log_dir_name)
 
     """ eval """
     torch.save(model.state_dict(), log_dir_name+'weight.pth')
 
     """ end """
+    print('== finished ==')
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='')
     parser.add_argument('--model', default='siamese')
-    parser.add_argument('--images',  '-i', default=False)
-    parser.add_argument('--timestamp',  '-s', default=False)
+    parser.add_argument('--image',  '-i', default=True)
     parser.add_argument('--audio',  '-a', default=True)
+    parser.add_argument('--time',  '-s', default=True)
     parser.add_argument('--text',  '-t', default=False)
 
     parser.add_argument('--epochs', '-e', default=100, type=int)
