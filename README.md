@@ -2,10 +2,12 @@
 My research theme  
 
 # TODO List
-+ [ ]: textの前処理
-+ [ ]: AudioCNNの実装
 + [ ]: TripletNetの実装
 + [ ]: tensorboard Embedding
+
++ [ ]: textの前処理
++ [ ]: AudioCNNの実装
++ [ ]: Compact Bilinear Poolingの実装
 + [x]: DataLoaderの実装
 + [x]: SiameseNetの実装
 + [x]: 学習フェーズの実装
