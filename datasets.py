@@ -132,6 +132,66 @@ class SiameseMulti(Dataset):
     def __len__(self):
         return len(self.labels)
 
+class TripletMulti(Dataset):
+    """
+    train: 各サンプル(アンカー)に対して、正と負のサンプルをランダムに選択する
+    """
+
+    def __init__(self, csv_path=None, transform=None, train=True,
+                    image=False, timestamp=False, audio=False, text=False):
+
+        self.train_df       = pd.read_csv('./BBC_Planet_Earth_Dataset/dataset/annotator_0/01_From_Pole_to_Pole.csv')
+        self.train          = train # これでtrain/testの切り替えを行う
+        self.transform      = transform
+        self.image_load     = image
+        self.timestamp_load = timestamp
+        self.audio_load     = audio 
+        self.text_load      = text 
+
+        self.labels = list(self.train_df.scene_id)
+        self.labels_set = set(self.train_df.scene_id.unique())
+        self.label_to_indices = {label: np.where(self.train_df.scene_id == label)[0]
+                                for label in self.labels_set}
+        # print('self.label_set:', self.labels_set)
+        # print('self.labels_to_indices:',  self.label_to_indices)
+        self.start_sec = list(self.train_df.start_sec)
+        self.end_sec   = list(self.train_df.end_sec)
+        self.shot_sec  = list(self.train_df.shot_sec)
+
+        if self.image_load: self.images = list(self.train_df.image.unique())
+        if self.audio_load: self.audios = list(self.train_df.audio.unique())
+
+        print('============================')
+        print('--- Triplet MultimodalDataset ---')
+        print(self.train_df.head())
+        print('start_sec: ', len(self.start_sec))
+        print('end_sec: ', len(self.end_sec))
+        print('shot_sec', len(self.shot_sec))
+        print('labels', len(self.labels))
+        print('============================')
+        print(self.label_to_indices)
+        print('============================')
+    
+    def image_open(self, t):
+        image = Image.open(t)
+        # transformするならする
+        if self.transform is None:
+            return image
+        else:
+            return self.transform(image)
+        
+    def audio_open(self, t):
+        y, fs = librosa.load(t)
+        melsp = librosa.feature.melspectrogram(y=y, sr=fs)
+
+        # (1, 128, 431)のtensorへ
+        melsp = torch.unsqueeze(torch.tensor(melsp), 0)
+        # print(melsp.size())
+        return melsp
+    
+    def __getitem__(self, index):
+        return 
+
 
 if __name__ == "__main__":
     normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
@@ -142,5 +202,5 @@ if __name__ == "__main__":
         transforms.ToTensor(),
         normalize])
 
-    multimodaldataset = SiameseMulti(transform=transform ,train=True,
+    multimodaldataset = TripletMulti(transform=transform ,train=True,
                                             image=False, audio=True, timestamp=False)
