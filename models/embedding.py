@@ -9,10 +9,6 @@ class EmbeddingNet(nn.Module):
     def __init__(self, image=False, audio=False, text=False, time=False):
         super(EmbeddingNet, self).__init__()
 
-        """ 
-        TODO: ここに条件分岐でいろいろ書く
-        """
-
         nn_input = 0
         self.image_extract = False
         self.audio_extract = False
@@ -33,9 +29,9 @@ class EmbeddingNet(nn.Module):
             nn_input += 1
 
         print('nn_input:', nn_input)
-        self.fc = nn.Sequential(nn.Linear(nn_input, 512), nn.PReLU(), nn.Dropout(0.5), 
-                                nn.Linear(512, 128), nn.PReLU(), nn.Dropout(0.5),
-                                nn.Linear(128, 32))
+        self.fc = nn.Sequential(nn.Linear(nn_input, 1024), nn.BatchNorm1d(1024), nn.PReLU(),
+                                nn.Linear(1024, 512), nn.BatchNorm1d(512), nn.PReLU(),
+                                nn.Linear(512, 256))
     
     def forward(self, x):
         concat_list = []
@@ -57,7 +53,7 @@ class EmbeddingNet(nn.Module):
         
         return output
     
-    def get_embedding(self, x):
+    def get_embedding(self, x, _):
         return self.forward(x)
 
 

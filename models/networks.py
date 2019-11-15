@@ -19,7 +19,7 @@ class SiameseNet(nn.Module):
 
         return output1, output2
 
-    def get_embedding(self, x):
+    def get_embedding(self, x, _):
         return self.embedding_net(x)
 
 class TripletNet(nn.Module):
