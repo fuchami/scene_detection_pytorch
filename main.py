@@ -14,11 +14,11 @@ from torchvision import transforms
 from torch.utils.tensorboard import SummaryWriter
 
 from trainer import fit
-from losses import ContrastiveLoss
-from datasets import SiameseMulti
-from models.networks import SiameseNet
+from losses import ContrastiveLoss,TripletLoss
+from datasets import SiameseMulti,TripletMulti
+from models.networks import SiameseNet,TripletNet
 from models.embedding import EmbeddingNet
-from utils import extract_embeddings,plot_embeddings
+from utils import extract_embeddings,plot_embeddings, tb_embeddings
 
 
 def main(args):
@@ -47,8 +47,13 @@ def main(args):
                                     transforms.ToTensor(),
                                     normalize])
     
-    train_dataset = SiameseMulti(csv_path=None, transform=transform, train=True, 
+    if args.model == 'siamese':
+        train_dataset = SiameseMulti(csv_path=None, transform=transform, train=True, 
                                     image=args.image, timestamp=args.time, audio=args.audio)
+    elif args.model == 'triplet':
+        train_dataset = TripletMulti(csv_path=None, transform=transform, train=True, 
+                                    image=args.image, timestamp=args.time, audio=args.audio)
+
     kwards = {'num_workers':1, 'pin_memory': True} if cuda else {}
     
     train_loader = torch.utils.data.DataLoader(train_dataset, 
@@ -57,13 +62,18 @@ def main(args):
                                             **kwards)
 
     """ build model """
-    model = SiameseNet(image=args.image, audio=args.audio, text=args.text, time=args.time)
+    if args.model == 'siamese':
+        model = SiameseNet(image=args.image, audio=args.audio, text=args.text, time=args.time)
+        loss_fn = ContrastiveLoss(args.margin)
+    elif args.model == 'triplet':
+        model = TripletNet(image=args.image, audio=args.audio, text=args.text, time=args.time)
+        loss_fn = TripletLoss(args.margin)
+
     # images, labels = next(iter(train_loader))
     # writer.add_graph(model, images)
     if cuda: model.cuda()
 
     """ define parameters """
-    loss_fn = ContrastiveLoss(args.margin)
     lr = args.learning_rate
     if args.optimizer == 'adam':
         print(f'=== optimizer adam ===')
@@ -79,25 +89,28 @@ def main(args):
     """ train """
     fit(train_loader, None, model, loss_fn, optimizer,scheduler, n_epochs, cuda, log_interval, writer)
     
-    # train_embeddings_baseline, train_labels_baseline = extract_embeddings(train_loader, model, cuda)
-    # plot_embeddings(train_embeddings_baseline, train_labels_baseline, log_dir_name)
+    train_embeddings_baseline, train_labels_baseline = extract_embeddings(train_loader, model, cuda)
+    plot_embeddings(train_embeddings_baseline, train_labels_baseline, log_dir_name)
+    """ tensorboard embedding """
+    # features, labels= tb_embeddings(train_loader, model, cuda)
+    # writer.add_embedding(features, metadata=labels)
 
     """ eval """
     torch.save(model.state_dict(), log_dir_name+'weight.pth')
+    writer.close()
 
-    """ end """
     print('== finished ==')
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='')
-    parser.add_argument('--model', default='siamese')
+    parser.add_argument('--model', default='triplet')
     parser.add_argument('--image',  '-i', default=True)
-    parser.add_argument('--audio',  '-a', default=True)
+    parser.add_argument('--audio',  '-a', default=False)
     parser.add_argument('--time',  '-s', default=True)
     parser.add_argument('--text',  '-t', default=False)
 
     parser.add_argument('--epochs', '-e', default=100, type=int)
-    parser.add_argument('--batchsize', '-b', default=64, type=int)
+    parser.add_argument('--batchsize', '-b', default=128, type=int)
     parser.add_argument('--learning_rate', '-r', default=1e-2)
     parser.add_argument('--log_interval', '-l', default=50, type=int)
     parser.add_argument('--optimizer', '-o' ,default='adam')

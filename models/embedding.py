@@ -26,7 +26,7 @@ class EmbeddingNet(nn.Module):
             nn_input += 2048
         if time:
             self.timestamp = True
-            nn_input += 1
+            nn_input += 3
 
         print('nn_input:', nn_input)
         self.fc = nn.Sequential(nn.Linear(nn_input, 1024), nn.BatchNorm1d(1024), nn.PReLU(),

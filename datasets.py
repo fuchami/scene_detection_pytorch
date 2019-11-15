@@ -148,7 +148,8 @@ class TripletMulti(Dataset):
         self.audio_load     = audio 
         self.text_load      = text 
 
-        self.labels = list(self.train_df.scene_id)
+        self.index         = list(self.train_df.shot_id)
+        self.labels     = list(self.train_df.scene_id)
         self.labels_set = set(self.train_df.scene_id.unique())
         self.label_to_indices = {label: np.where(self.train_df.scene_id == label)[0]
                                 for label in self.labels_set}
@@ -169,8 +170,6 @@ class TripletMulti(Dataset):
         print('shot_sec', len(self.shot_sec))
         print('labels', len(self.labels))
         print('============================')
-        print(self.label_to_indices)
-        print('============================')
     
     def image_open(self, t):
         image = Image.open(t)
@@ -190,8 +189,72 @@ class TripletMulti(Dataset):
         return melsp
     
     def __getitem__(self, index):
-        return 
+        if self.train:
+            anchor_index = index
+            anchor_label = self.labels[anchor_index]
+            label_count = len(self.label_to_indices[anchor_label])
 
+
+            # 2つ以上のショットのシーンが出るまでがんばる
+            while label_count < 2:
+                anchor_index = np.random.choice(self.index)
+                anchor_label = self.labels[anchor_index]
+                label_count = len(self.label_to_indices[anchor_label])
+            
+            positive_index = anchor_index
+            while positive_index == anchor_index:
+                positive_index = np.random.choice(self.label_to_indices[anchor_label])
+            negative_label = np.random.choice(list(self.labels_set - set([anchor_label])))
+            negative_index = np.random.choice(self.label_to_indices[negative_label])
+        
+        else:
+            pass # TODO: テストデータ用の処理を書く
+            
+
+        """ label check """
+        if self.labels[anchor_index] != self.labels[positive_index]:
+            raise ("ERROR!!! anchor and positive not same ")
+        if self.labels[anchor_index] == self.labels[negative_index]:
+            raise ("ERROR!!! anchor and negative same ")
+        if self.labels[positive_index] == self.labels[negative_index]:
+            raise ("ERROR!!! positive and negative same ")
+
+        anchor = {}
+        positive = {}
+        negative = {}
+
+        """ load image """
+        if self.image_load:
+            img_anc = self.image_open(self.images[anchor_index])
+            img_pos = self.image_open(self.images[positive_index])
+            img_neg = self.image_open(self.images[negative_index])
+            anchor['image']   = img_anc
+            positive['image'] = img_pos
+            negative['image'] = img_neg
+        
+        """ load audio """
+        if self.audio_load:
+            aud_anc = self.audio_open(self.audios[anchor_index])
+            aud_pos = self.audio_open(self.audios[positive_index])
+            aud_neg = self.audio_open(self.audios[negative_index])
+            anchor['audio'] = aud_anc
+            positive['audio'] = aud_pos
+            negative['audio'] = aud_neg
+        
+        """ laod timestamp """
+        if self.timestamp_load:
+            ts_anc = [self.shot_sec[anchor_index], self.start_sec[anchor_index], self.end_sec[anchor_index]]
+            ts_pos = [self.shot_sec[positive_index], self.start_sec[positive_index], self.end_sec[positive_index]]
+            ts_neg = [self.shot_sec[negative_index], self.start_sec[negative_index], self.end_sec[negative_index]]
+            anchor['timestamp'] = torch.tensor(ts_anc)
+            positive['timestamp'] = torch.tensor(ts_pos)
+            negative['timestamp'] = torch.tensor(ts_neg)
+
+        dataset = (anchor, positive, negative)
+        return dataset,[],[]
+
+    def __len__(self):
+        return len(self.labels)
 
 if __name__ == "__main__":
     normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
