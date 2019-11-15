@@ -73,6 +73,7 @@ class SiameseMulti(Dataset):
             if self.image_load: img1 = self.images[index]
             if self.audio_load: aud1 = self.audios[index]
             if self.timestamp_load: timestamp1 = [self.shot_sec[index]]
+            # if self.timestamp_load: timestamp1 = [self.shot_sec[index], self.start_sec[index], self.end_sec[index]]
 
             label_count = len(self.label_to_indices[label1])
 
@@ -93,6 +94,7 @@ class SiameseMulti(Dataset):
             if self.image_load: img2 = self.images[siamese_index]
             if self.audio_load: aud2 = self.audios[siamese_index]
             if self.timestamp_load: timestamp2 = [self.shot_sec[siamese_index]]
+            # if self.timestamp_load: timestamp2 = [self.shot_sec[siamese_index], self.start_sec[siamese_index], self.end_sec[siamese_index]]
 
         else:
             # TODO:テストデータ用の処理を書く

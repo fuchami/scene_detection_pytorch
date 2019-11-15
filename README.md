@@ -3,7 +3,7 @@ My research theme  
 
 # TODO List
 + [ ]: textの前処理
-+ [ ]: AudioCNNの実装
++ [x]: AudioCNNの実装
 + [ ]: TripletNetの実装
 + [ ]: tensorboard Embedding
 + [x]: DataLoaderの実装
@@ -25,3 +25,11 @@ https://github.com/adambielski/siamese-triplet
 https://blog.shikoan.com/torchvision-multiple-inputs/
 ・pytorch siamese
 https://vaaaaaanquish.hatenablog.com/entry/2019/02/23/214036
+
+
+## Usage TensorBoard
+```
+ssh username@IP_Address -L 6006:localhost:6006
+tensorboard --logdir <log_dir>
+
+```
