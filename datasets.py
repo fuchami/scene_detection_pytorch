@@ -251,7 +251,7 @@ class TripletMulti(Dataset):
             negative['timestamp'] = torch.tensor(ts_neg)
 
         dataset = (anchor, positive, negative)
-        return dataset,[],[]
+        return dataset,[], anchor_label
 
     def __len__(self):
         return len(self.labels)

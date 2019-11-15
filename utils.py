@@ -53,7 +53,7 @@ def extract_embeddings(dataloader, model, cuda):
 
             i = list(data[0].keys())[0]
 
-            embeddings[k:k+len(data[0][i])] = model.get_embedding(*data).data.cpu().numpy()
+            embeddings[k:k+len(data[0][i])] = model.get_embedding(data[0]).data.cpu().numpy()
             labels[k:k+len(data[0][i])] = label.numpy()
             k += len(data[0][i])
 

@@ -109,8 +109,8 @@ if __name__ == "__main__":
     parser.add_argument('--time',  '-s', default=True)
     parser.add_argument('--text',  '-t', default=False)
 
-    parser.add_argument('--epochs', '-e', default=100, type=int)
-    parser.add_argument('--batchsize', '-b', default=128, type=int)
+    parser.add_argument('--epochs', '-e', default=30, type=int)
+    parser.add_argument('--batchsize', '-b', default=64, type=int)
     parser.add_argument('--learning_rate', '-r', default=1e-2)
     parser.add_argument('--log_interval', '-l', default=50, type=int)
     parser.add_argument('--optimizer', '-o' ,default='adam')

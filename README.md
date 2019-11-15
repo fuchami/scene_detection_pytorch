@@ -2,7 +2,8 @@
 My research theme  
 
 # TODO List
-+ [ ]: TripletNetの実装
++ [x]: TripletNetの実装
++ [x]: TripletNetのT-SNE Embedding
 + [ ]: tensorboard Embedding
 
 + [ ]: textの前処理

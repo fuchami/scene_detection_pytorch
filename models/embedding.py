@@ -53,7 +53,7 @@ class EmbeddingNet(nn.Module):
         
         return output
     
-    def get_embedding(self, x, _):
+    def get_embedding(self, x):
         return self.forward(x)
 
 
