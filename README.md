@@ -2,12 +2,13 @@
 My research theme  
 
 # TODO List
-+ [ ]: TripletNetの実装
++ [x]: TripletNetの実装
++ [x]: TripletNetのT-SNE Embedding
 + [ ]: tensorboard Embedding
 
 + [ ]: textの前処理
-+ [ ]: AudioCNNの実装
 + [ ]: Compact Bilinear Poolingの実装
++ [x]: AudioCNNの実装
 + [x]: DataLoaderの実装
 + [x]: SiameseNetの実装
 + [x]: 学習フェーズの実装
@@ -27,3 +28,11 @@ https://github.com/adambielski/siamese-triplet
 https://blog.shikoan.com/torchvision-multiple-inputs/
 ・pytorch siamese
 https://vaaaaaanquish.hatenablog.com/entry/2019/02/23/214036
+
+
+## Usage TensorBoard
+```
+ssh username@IP_Address -L 6006:localhost:6006
+tensorboard --logdir <log_dir>
+
+```
