@@ -4,9 +4,11 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torchvision.models as models
+from compact_bilinear_pooling import CountSketch, CompactBilinearPooling
 
 class EmbeddingNet(nn.Module):
-    def __init__(self, image=False, audio=False, text=False, time=False):
+    def __init__(self, image=False, audio=False, text=False, time=False,
+                mcb=False):
         super(EmbeddingNet, self).__init__()
 
         """ 
@@ -18,6 +20,7 @@ class EmbeddingNet(nn.Module):
         self.audio_extract = False
         self.text_extract  = False
         self.timestamp     = False
+        self.mcb = mcb
 
         if image:
             self.image_extract = True 
