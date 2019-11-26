@@ -2,12 +2,15 @@
 My research theme  
 
 # TODO List
-+ [x]: TripletNetの実装
-+ [x]: TripletNetのT-SNE Embedding
 + [ ]: tensorboard Embedding
++ [ ]: eval テストデータで評価を行うコードを書く
 
 + [ ]: textの前処理
 + [ ]: Compact Bilinear Poolingの実装
++ [ ]: 各シーンのフレーム一覧
+
++ [x]: TripletNetの実装
++ [x]: TripletNetのT-SNE Embedding
 + [x]: AudioCNNの実装
 + [x]: DataLoaderの実装
 + [x]: SiameseNetの実装

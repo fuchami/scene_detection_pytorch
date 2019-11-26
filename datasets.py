@@ -69,11 +69,12 @@ class SiameseMulti(Dataset):
         if self.train:
             target = np.random.randint(0,2) # 0or1をランダムに選択
             label1 = self.labels[index]
+            img1_path = self.images[index]
 
             if self.image_load: img1 = self.images[index]
             if self.audio_load: aud1 = self.audios[index]
-            if self.timestamp_load: timestamp1 = [self.shot_sec[index]]
-            # if self.timestamp_load: timestamp1 = [self.shot_sec[index], self.start_sec[index], self.end_sec[index]]
+            # if self.timestamp_load: timestamp1 = [self.shot_sec[index]]
+            if self.timestamp_load: timestamp1 = [self.shot_sec[index], self.start_sec[index], self.end_sec[index]]
 
             label_count = len(self.label_to_indices[label1])
 
@@ -93,8 +94,8 @@ class SiameseMulti(Dataset):
 
             if self.image_load: img2 = self.images[siamese_index]
             if self.audio_load: aud2 = self.audios[siamese_index]
-            if self.timestamp_load: timestamp2 = [self.shot_sec[siamese_index]]
-            # if self.timestamp_load: timestamp2 = [self.shot_sec[siamese_index], self.start_sec[siamese_index], self.end_sec[siamese_index]]
+            # if self.timestamp_load: timestamp2 = [self.shot_sec[siamese_index]]
+            if self.timestamp_load: timestamp2 = [self.shot_sec[siamese_index], self.start_sec[siamese_index], self.end_sec[siamese_index]]
 
         else:
             # TODO:テストデータ用の処理を書く
@@ -127,7 +128,7 @@ class SiameseMulti(Dataset):
             data2['timestamp'] = timestamp2
         
         dataset = (data1, data2)
-        return dataset, target, label1
+        return dataset, target, label1, img1_path
 
     def __len__(self):
         return len(self.labels)
@@ -193,6 +194,7 @@ class TripletMulti(Dataset):
             anchor_index = index
             anchor_label = self.labels[anchor_index]
             label_count = len(self.label_to_indices[anchor_label])
+            img1_path = self.images[index]
 
 
             # 2つ以上のショットのシーンが出るまでがんばる
@@ -251,7 +253,7 @@ class TripletMulti(Dataset):
             negative['timestamp'] = torch.tensor(ts_neg)
 
         dataset = (anchor, positive, negative)
-        return dataset,[], anchor_label
+        return dataset,[], anchor_label, img1_path
 
     def __len__(self):
         return len(self.labels)

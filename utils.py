@@ -2,11 +2,15 @@
 
 import numpy as np
 import matplotlib.pyplot as plt
+import PIL
 import torch
+import torchvision
 from sklearn.manifold import TSNE
 
 chars = "^<>vo+d"
 markers = [chars[i%7] for i in range(100)]
+
+feature_size = 128
 
 def plot_embeddings(embeddings, targets, save_path, xlim=None, ylim=None):
     plt.figure(figsize=(20,20))
@@ -21,31 +25,45 @@ def plot_embeddings(embeddings, targets, save_path, xlim=None, ylim=None):
     plt.legend()
     plt.savefig(save_path +'embedding.png')
 
-def tb_embeddings(dataloader, model, cuda):
+def tb_embeddings(dataloader,dataset, model, cuda):
+
+    tb_transform = torchvision.transforms.Compose([
+        torchvision.transforms.Resize((50, 50)),
+        torchvision.transforms.ToTensor(),
+    ])
+
+    # features = torch.zeros(0)
+    features = torch.zeros(0)
+    label_imgs = torch.zeros(0)
+    labels = []
+
     with torch.no_grad():
         model.eval()
-        features = np.zeros((len(dataloader.dataset), 256))
-        labels = []
         k = 0
-        for data, target, label in dataloader:
+        for data, target, label, img1_path in dataloader:
             if cuda:
                 for dict_ in data:
                     for d in dict_:
                         dict_[d] = dict_[d].cuda()
-
-            features[k:k+len(data[0][i])] = model.get_embedding(*data).data.cpu().numpy()
+            
+            feature = torch.Tensor(model.get_embedding(data[0]).data.cpu().numpy())
+            features = torch.cat((features, feature))
             labels.append(label)
-            k += len(data[0][i])
+            label_img = tb_transform(PIL.Image.open(img1_path[0]).convert('RGB'))
+            label_imgs = torch.cat((label_imgs, label_img))
     
-    return torch.Tensor(features), labels
+    features = features.view(len(dataset), feature_size)
+    label_imgs = label_imgs.view(len(dataset), 3, 50, 50)
+    
+    return features, labels, label_imgs
 
 def extract_embeddings(dataloader, model, cuda):
     with torch.no_grad():
         model.eval()
-        embeddings = np.zeros((len(dataloader.dataset),256))
+        embeddings = np.zeros((len(dataloader.dataset), feature_size))
         labels = np.zeros(len(dataloader.dataset))
         k = 0
-        for data, target, label in dataloader:
+        for data, target, label, _ in dataloader:
             if cuda:
                 for dict_ in data:
                     for d in dict_:

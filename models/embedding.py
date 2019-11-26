@@ -29,9 +29,11 @@ class EmbeddingNet(nn.Module):
             nn_input += 3
 
         print('nn_input:', nn_input)
-        self.fc = nn.Sequential(nn.Linear(nn_input, 1024), nn.BatchNorm1d(1024), nn.PReLU(),
-                                nn.Linear(1024, 512), nn.BatchNorm1d(512), nn.PReLU(),
-                                nn.Linear(512, 256))
+        self.fc = nn.Sequential(nn.Linear(nn_input, 512), nn.PReLU(),
+                                nn.Dropout(0.4),
+                                nn.Linear(512, 256),nn.PReLU(),
+                                nn.Dropout(0.4),
+                                nn.Linear(256, 128))
     
     def forward(self, x):
         concat_list = []

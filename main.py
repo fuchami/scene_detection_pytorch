@@ -60,6 +60,12 @@ def main(args):
                                             batch_size=args.batchsize,
                                             shuffle=True,
                                             **kwards)
+    # TODO:
+    test_loader = torch.utils.data.DataLoader(train_dataset,
+                                            batch_size=1,
+                                            shuffle=False,
+                                            **kwards)
+    print('train_dataset length', len(train_dataset))
 
     """ build model """
     if args.model == 'siamese':
@@ -89,11 +95,13 @@ def main(args):
     """ train """
     fit(train_loader, None, model, loss_fn, optimizer,scheduler, n_epochs, cuda, log_interval, writer)
     
+    """ tsne embedding plot """
     train_embeddings_baseline, train_labels_baseline = extract_embeddings(train_loader, model, cuda)
     plot_embeddings(train_embeddings_baseline, train_labels_baseline, log_dir_name)
+
     """ tensorboard embedding """
-    # features, labels= tb_embeddings(train_loader, model, cuda)
-    # writer.add_embedding(features, metadata=labels)
+    features, labels, label_imgs= tb_embeddings(test_loader, train_dataset, model, cuda)
+    writer.add_embedding(features, metadata=labels, label_img=label_imgs)
 
     """ eval """
     torch.save(model.state_dict(), log_dir_name+'weight.pth')
@@ -109,7 +117,7 @@ if __name__ == "__main__":
     parser.add_argument('--time',  '-s', default=True)
     parser.add_argument('--text',  '-t', default=False)
 
-    parser.add_argument('--epochs', '-e', default=30, type=int)
+    parser.add_argument('--epochs', '-e', default=100, type=int)
     parser.add_argument('--batchsize', '-b', default=64, type=int)
     parser.add_argument('--learning_rate', '-r', default=1e-2)
     parser.add_argument('--log_interval', '-l', default=50, type=int)
