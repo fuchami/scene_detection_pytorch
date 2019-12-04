@@ -19,6 +19,27 @@ import subprocess
 import numpy as np
 import pandas as pd
 
+#%% dump txt file
+movie_path_list = sorted(glob.glob("./BBC_Planet_Earth_Dataset/src/*.mp4"))
+save_dir = './BBC_Planet_Earth_Dataset/text/src/'
+if not os.path.exists(save_dir): os.makedirs(save_dir) 
+
+swt = True
+if swt: # 1回やれば十分なので
+    for movie_path in movie_path_list:
+        movie_name, _ = os.path.splitext(os.path.basename(movie_path))
+
+        # dump text ssa file
+        cmd = f'ffmpeg -i {movie_path} -map 0:4 {save_dir}{movie_name}.ssa'
+        print(cmd)
+        subprocess.call(cmd, shell=True)
+
+        # ssa -> txt
+        cmd = f'mv {save_dir}{movie_name}.ssa {save_dir}{movie_name}.txt'
+        print(cmd)
+        subprocess.call(cmd, shell=True)
+
+
 #%% dump wav file
 movie_path_list = sorted(glob.glob("./BBC_Planet_Earth_Dataset/src/*.mp4"))
 save_dir = './BBC_Planet_Earth_Dataset/audio/src/'

@@ -2,13 +2,16 @@
 My research theme  
 
 # TODO List
-+ [ ]: tensorboard Embedding
++ [ ]: textの前処理
++ [ ]: trainデータをmergeするコード(dataloader内)
 + [ ]: eval テストデータで評価を行うコードを書く
 
-+ [ ]: textの前処理
++ [ ]: LossのDistanceをCosineに
 + [ ]: Compact Bilinear Poolingの実装
++ [ ]: 音声のNN
 + [ ]: 各シーンのフレーム一覧
 
++ [x]: tensorboard Embedding
 + [x]: TripletNetの実装
 + [x]: TripletNetのT-SNE Embedding
 + [x]: AudioCNNの実装
@@ -39,3 +42,5 @@ ssh username@IP_Address -L 6006:localhost:6006
 tensorboard --logdir <log_dir>
 
 ```
+
+### auddio

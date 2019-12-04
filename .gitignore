@@ -1,6 +1,7 @@
 /BBC_Planet_Earth_Dataset/
 /.vscode/
 /logs/
+/oldlogs/
 .DS_Store
 
 *.pyc
