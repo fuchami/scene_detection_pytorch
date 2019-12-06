@@ -24,38 +24,56 @@ movie_path_list = sorted(glob.glob("./BBC_Planet_Earth_Dataset/src/*.mp4"))
 save_dir = './BBC_Planet_Earth_Dataset/text/src/'
 if not os.path.exists(save_dir): os.makedirs(save_dir) 
 
-swt = True
-if swt: # 1回やれば十分なので
-    for movie_path in movie_path_list:
-        movie_name, _ = os.path.splitext(os.path.basename(movie_path))
+for movie_path in movie_path_list:
+    movie_name, _ = os.path.splitext(os.path.basename(movie_path))
 
-        # dump text ssa file
-        cmd = f'ffmpeg -i {movie_path} -map 0:4 {save_dir}{movie_name}.ssa'
-        print(cmd)
-        subprocess.call(cmd, shell=True)
+    # dump text ssa file
+    cmd = f'ffmpeg -i {movie_path} -map 0:4 {save_dir}{movie_name}.ssa'
+    print(cmd)
+    subprocess.call(cmd, shell=True)
+    # ssa -> txt
+    cmd = f'mv {save_dir}{movie_name}.ssa {save_dir}{movie_name}.txt'
+    print(cmd)
+    subprocess.call(cmd, shell=True)
 
-        # ssa -> txt
-        cmd = f'mv {save_dir}{movie_name}.ssa {save_dir}{movie_name}.txt'
-        print(cmd)
-        subprocess.call(cmd, shell=True)
+#%% txtファイルの整形
+txt_path_list = sorted(glob.glob("./BBC_Planet_Earth_Dataset/text/src/*"))
+save_dir = "./BBC_Planet_Earth_Dataset/text/"
 
+for txt_path in txt_path_list:
+    txt_name, _ = os.path.splitext(os.path.basename(txt_path))
+    with open(txt_path) as f:
+        txt = [s.split(',') for s in f.readlines()]
+        txt = txt[12:]
+    
+    # write
+    with open(f'{save_dir}{txt_name}.csv', 'w') as f:
+        writer = csv.writer(f)
+        writer.writerow(['start', 'end','start_sec', 'end_sec', 'text'])
+        for t in txt:
+            text = ''.join(t[9:]).rstrip().replace('\\', ' ')
+            # 0:00:30.12 → second
+
+            h,m,s = t[1].split(':')
+            start_sec = round(int(m)*60 + float(s),2)
+            h,m,s = t[2].split(':')
+            end_sec = round(int(m)*60 + float(s),2)
+            row = [t[1], t[2], start_sec, end_sec, text]
+            writer.writerow(row)
 
 #%% dump wav file
 movie_path_list = sorted(glob.glob("./BBC_Planet_Earth_Dataset/src/*.mp4"))
 save_dir = './BBC_Planet_Earth_Dataset/audio/src/'
 if not os.path.exists(save_dir): os.makedirs(save_dir) 
+for movie_path in movie_path_list:
+    movie_name, _ = os.path.splitext(os.path.basename(movie_path))
+    cmd = "ffmpeg -i "+movie_path+" -map 0:2 -codec:a copy "+save_dir+movie_name+".m4a"
+    print(cmd)
+    subprocess.call(cmd, shell=True)
 
-swt = False
-if swt: # 1回やれば十分なので
-    for movie_path in movie_path_list:
-        movie_name, _ = os.path.splitext(os.path.basename(movie_path))
-        cmd = "ffmpeg -i "+movie_path+" -map 0:2 -codec:a copy "+save_dir+movie_name+".m4a"
-        print(cmd)
-        subprocess.call(cmd, shell=True)
-
-        # m4a -> wav
-        cmd = "ffmpeg -i "+save_dir+movie_name+".m4a "+save_dir+movie_name+".wav"
-        subprocess.call(cmd, shell=True)
+    # m4a -> wav
+    cmd = "ffmpeg -i "+save_dir+movie_name+".m4a "+save_dir+movie_name+".wav"
+    subprocess.call(cmd, shell=True)
 
 #%%
 class MultimodalData(object):
@@ -148,7 +166,9 @@ class MultimodalData(object):
             start_sec = float(num_shot[0]/self.fps)
             end_sec = float(num_shot[1]/self.fps)
             shot_sec = end_sec - start_sec
+            shot_sec = round(shot_sec, 2) # 小数点2桁に丸め込み
             middle_sec = (end_sec - start_sec)/2 + start_sec
+            middle_sec = round(middle_sec, 2) # 小数点2桁に丸め込み
             middle_frame = int((num_shot[1]-num_shot[0])/2) + num_shot[0]
 
             self.start_sec.append(start_sec)
