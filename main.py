@@ -49,10 +49,10 @@ def main(args):
     
     if args.model == 'siamese':
         train_dataset = SiameseMulti(csv_path=None, transform=transform, train=True, 
-                                    image=args.image, timestamp=args.time, audio=args.audio)
+                                    image=args.image, timestamp=args.time, audio=args.audio, text=args.text)
     elif args.model == 'triplet':
         train_dataset = TripletMulti(csv_path=None, transform=transform, train=True, 
-                                    image=args.image, timestamp=args.time, audio=args.audio)
+                                    image=args.image, timestamp=args.time, audio=args.audio, text=args.text)
 
     kwards = {'num_workers':1, 'pin_memory': True} if cuda else {}
     
@@ -86,6 +86,7 @@ def main(args):
         optimizer = optim.Adam(model.parameters(), lr=lr)
     elif args.optimizer == 'sgd':
         print(f'=== optimizer sgd ===')
+        # referenceに乗っ取る
         optimizer = optim.SGD(model.parameters(), lr=0.01, momentum=0.9, weight_decay=0.0005, nesterov=True)
 
     scheduler = lr_scheduler.StepLR(optimizer, 8, gamma=0.1, last_epoch=-1)
@@ -111,14 +112,15 @@ def main(args):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='')
-    parser.add_argument('--model', default='triplet')
+    parser.add_argument('--model', default='siamese')
     parser.add_argument('--image',  '-i', default=True)
     parser.add_argument('--audio',  '-a', default=False)
     parser.add_argument('--time',  '-s', default=True)
-    parser.add_argument('--text',  '-t', default=False)
+    parser.add_argument('--text',  '-t', default=True)
 
     parser.add_argument('--epochs', '-e', default=100, type=int)
-    parser.add_argument('--batchsize', '-b', default=64, type=int)
+    parser.add_argument('--output_unit', default=128, type=int)
+    parser.add_argument('--batchsize', '-b', default=128, type=int)
     parser.add_argument('--learning_rate', '-r', default=1e-2)
     parser.add_argument('--log_interval', '-l', default=50, type=int)
     parser.add_argument('--optimizer', '-o' ,default='adam')

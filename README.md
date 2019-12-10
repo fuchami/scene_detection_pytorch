@@ -41,6 +41,9 @@ https://blog.shikoan.com/torchvision-multiple-inputs/
 ・pytorch siamese
 https://vaaaaaanquish.hatenablog.com/entry/2019/02/23/214036
 
+・BERT Tutorial
+http://mccormickml.com/2019/05/14/BERT-word-embeddings-tutorial/#3-extracting-embeddings
+
 
 ## Usage TensorBoard
 ```

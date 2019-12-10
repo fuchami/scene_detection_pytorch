@@ -139,6 +139,8 @@ class MultimodalData(object):
             "shot_sec":self.shot_sec
         })
 
+        dataset.replace(np.nan, ' ', inplace=True)
+
         if not os.path.exists(save_dir): os.makedirs(save_dir)
         dataset.to_csv(f'{save_dir}{movie_name}.csv')
 
@@ -214,12 +216,15 @@ class MultimodalData(object):
         # 検索
         df_text = self.text[(self.text['start_sec'] > start_text_sec ) & (self.text['end_sec'] < end_text_sec)]
         text = pd.DataFrame([df_text['text'].str.cat(sep=' ')])
-        # print(text[0][0])
 
-        return text[0][0]
+        # マッチしない時は空白文字を返す
+        if len(text[0][0]) == 0:
+            return ' '
+        else:
+            return text[0][0]
 
 #%%  debugで1回だけ
-# multimodaldata = MultimodalData('0', '01_From_Pole_to_Pole')
+multimodaldata = MultimodalData('0', '01_From_Pole_to_Pole')
 
 #%%
 movie_name_list = [os.path.basename(i) for i in sorted(glob.glob('./BBC_Planet_Earth_Dataset/annotations/shots/*'))]

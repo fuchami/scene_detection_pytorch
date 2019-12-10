@@ -4,6 +4,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torchvision.models as models
+from transformers import BertModel
 from compact_bilinear_pooling import CountSketch, CompactBilinearPooling
 
 class EmbeddingNet(nn.Module):
@@ -27,14 +28,29 @@ class EmbeddingNet(nn.Module):
             self.audio_extract = True 
             self.audio_extractor = AudioCNN()
             nn_input += 2048
+        if text:
+            self.text_extract = True
+            nn_input += 768
         if time:
             self.timestamp = True
             nn_input += 3
 
         print('nn_input:', nn_input)
-        self.fc = nn.Sequential(nn.Linear(nn_input, 512), nn.PReLU(),
+
+        # normal
+        self.fc = nn.Sequential(nn.Linear(nn_input, 512), nn.ReLU(),
+                                nn.Linear(512, 128), nn.ReLU(),
+                                nn.Linear(128, 30))
+
+        # with BatchNorm
+        self.fc_bn = nn.Sequential(nn.Linear(nn_input, 512), nn.BatchNorm1d(512), nn.PReLU(),
+                                nn.Linear(512, 256), nn.BatchNorm1d(256), nn.PReLU(),
+                                nn.Linear(256, 128))
+
+        # with dropout
+        self.fc_do = nn.Sequential(nn.Linear(nn_input, 512), nn.PReLU(),
                                 nn.Dropout(0.4),
-                                nn.Linear(512, 256),nn.PReLU(),
+                                nn.Linear(512, 256), nn.PReLU(),
                                 nn.Dropout(0.4),
                                 nn.Linear(256, 128))
     
@@ -48,8 +64,8 @@ class EmbeddingNet(nn.Module):
             aud_out = self.audio_extractor(x['audio'])
             concat_list.append(aud_out)
         if self.text_extract:
-            pass
-            # TODO: テキストの埋め込み処理
+            txt_out = x['text']
+            concat_list.append(txt_out)
         if self.timestamp:
             concat_list.append(x['timestamp'])
         

@@ -63,35 +63,35 @@ with torch.no_grad():
 #%%
 print("Number of layers:", len(encoded_layers))
 layer_i = 0
-
 print("Number of batches:", len(encoded_layers[layer_i]))
 batch_i = 0
-
 print("Number of tokens:", len(encoded_layers[layer_i][batch_i]))
 token_i = 0
-
 print("Number of hidden units:", len(encoded_layers[layer_i][batch_i][token_i]))
 
 # %% こんなことせずとも一発?
 
-text = "Here is the sentence I want embeddings for."
+text = "Deer are frequent Ncasualties of the harsh winter and these leopards are not Nabove scavenging from a corpse. African leopards Ncould never survive here. But the Russian cats have thick Nfur to shield them from the cold"
 
 tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
 model = BertModel.from_pretrained('bert-base-uncased')
-model.embeddings.word_embeddings
+# model.embeddings.word_embeddings
 model.eval()
 
 input_ids = torch.tensor([tokenizer.encode(text, add_special_tokens=True)])
+print(input_ids.size())
 
 with torch.no_grad():
-    last_hidden_states = model(input_ids)[0]
+    last_hidden_states = model(input_ids)[0][0]
 
 sentence_embedding = torch.mean(last_hidden_states, dim=0)
 
-# print(sentence_embedding)
+print(type(last_hidden_states))
+print(last_hidden_states.size())
+
+print(sentence_embedding)
 print(type(sentence_embedding))
 print(sentence_embedding.size())
-
 
 
 # %%

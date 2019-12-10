@@ -9,6 +9,8 @@ from torch.utils.data import Dataset
 from torch.utils.data.sampler import BatchSampler
 from torchvision import transforms
 
+from transformers import BertTokenizer,BertModel
+
 class SiameseMulti(Dataset):
     def __init__(self, csv_path=None, transform=None, train=True,
                     image=False, timestamp=False, audio=False, text=False):
@@ -17,6 +19,10 @@ class SiameseMulti(Dataset):
         2. TimeStamp( start_sec, end_sec, shot_sec)
         3. Audio
         4. text
+
+        TODO: 
+            - trainをすべてmerge
+            - csv_pathはtext csvにする
         """
         self.train_df       = pd.read_csv('./BBC_Planet_Earth_Dataset/dataset/annotator_0/01_From_Pole_to_Pole.csv')
         self.train          = train # これでtrain/testの切り替えを行う
@@ -38,6 +44,11 @@ class SiameseMulti(Dataset):
 
         if self.image_load: self.images = list(self.train_df.image.unique())
         if self.audio_load: self.audios = list(self.train_df.audio.unique())
+        if self.text_load:
+            self.texts = list(self.train_df.text)
+            self.tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
+            self.bert = BertModel.from_pretrained('bert-base-uncased')
+            self.bert.eval()
 
         print('============================')
         print('--- MultimodalDataset ---')
@@ -73,6 +84,9 @@ class SiameseMulti(Dataset):
 
             if self.image_load: img1 = self.images[index]
             if self.audio_load: aud1 = self.audios[index]
+            if self.text_load:  txt1 = self.texts[index]
+
+            """ time stamp 1 feature or 3 feature? """
             # if self.timestamp_load: timestamp1 = [self.shot_sec[index]]
             if self.timestamp_load: timestamp1 = [self.shot_sec[index], self.start_sec[index], self.end_sec[index]]
 
@@ -94,6 +108,7 @@ class SiameseMulti(Dataset):
 
             if self.image_load: img2 = self.images[siamese_index]
             if self.audio_load: aud2 = self.audios[siamese_index]
+            if self.text_load:  txt2 = self.texts[siamese_index]
             # if self.timestamp_load: timestamp2 = [self.shot_sec[siamese_index]]
             if self.timestamp_load: timestamp2 = [self.shot_sec[siamese_index], self.start_sec[siamese_index], self.end_sec[siamese_index]]
 
@@ -119,6 +134,20 @@ class SiameseMulti(Dataset):
             aud2 = self.audio_open(aud2)
             data1['audio'] = aud1
             data2['audio'] = aud2
+        
+        """ load text """
+        if self.text_load:
+            txt1 = torch.tensor([self.tokenizer.encode(txt1, add_special_tokens=True)])
+            txt2 = torch.tensor([self.tokenizer.encode(txt2, add_special_tokens=True)])
+
+            # もうここでBERT word Embeddingやっちゃう！
+            # TODO: となるとImageExtractもここでやっちゃったほうがいい？
+            with torch.no_grad():
+                txt1 = self.bert(txt1)[0][0]
+                txt2 = self.bert(txt2)[0][0]
+
+            data1['text'] = torch.mean(txt1, dim=0)
+            data2['text'] = torch.mean(txt2, dim=0)
 
         """ load timestamp """
         if self.timestamp_load:
@@ -267,5 +296,5 @@ if __name__ == "__main__":
         transforms.ToTensor(),
         normalize])
 
-    multimodaldataset = TripletMulti(transform=transform ,train=True,
-                                            image=False, audio=True, timestamp=False)
+    multimodaldataset = SiameseMulti(transform=transform ,train=True,
+                                            image=False, audio=True, timestamp=False, text=True)
