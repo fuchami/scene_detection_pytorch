@@ -5,8 +5,12 @@ make Multimodal Labeling file
 
 [x] 画像: 各ショットのミドルフレーム
 [ ] テキスト: ショットの中心のフレームから20sec間のテキストを埋め込む
-[x] 音声： ショットの中心のフレームから10sec間の音声を抽出
+[ ] 音声： ショットの中心のフレームから20sec間の音声を抽出
 [x] timestamp: ショットの開始終了時間、ショットの長さ
+
+text1: ショットの中心フレームを中心にmax(Ws, 20sec)のコンテキストウィンドウを定義する
+    Ws:ショットの継続時間
+tex2:
 
 [shot_id, scene_id, start_frame, end_frame, image, audio, text, start_time, end_time, shot_length]
 """
@@ -77,10 +81,7 @@ for movie_path in movie_path_list:
 
 #%%
 class MultimodalData(object):
-    def __init__(self,annotator,movie_name, image=True, audio=True, text=False):
-        self.image = image
-        self.audio = audio
-        self.test = text
+    def __init__(self,annotator,movie_name):
         self.fps = 25
         self.episode = movie_name.split('_', 1)[0] # 01~11の値
         print(self.episode)
@@ -90,6 +91,7 @@ class MultimodalData(object):
         scene_dir = './BBC_Planet_Earth_Dataset/annotations/scenes/'
         save_dir = f'./BBC_Planet_Earth_Dataset/dataset/annotator_{annotator}/'
         audio_path = f'./BBC_Planet_Earth_Dataset/audio/src/bbc_{self.episode}.wav'
+        text_path = f'./BBC_Planet_Earth_Dataset/text/bbc_{self.episode}.csv'
 
         self.shot_id     = []
         self.scene_id    = []
@@ -114,7 +116,10 @@ class MultimodalData(object):
         self.scene_data = self.load_scene_txt(scene_txt_path)
 
         """ dump shot audio file """
-        if audio: self.sound = AudioSegment.from_file(audio_path, format="wav")
+        self.sound = AudioSegment.from_file(audio_path, format="wav")
+
+        """ load text csv file """
+        self.text = pd.read_csv(text_path)
 
         """ make dataset """
         self.make_dataset()
@@ -127,6 +132,7 @@ class MultimodalData(object):
             "end_frame":self.end_frame,
             "image":self.image_data,
             "audio":self.audio_data,
+            "text":self.text_data,
             "start_sec":self.start_sec,
             "end_sec":self.end_sec,
             "middle_sec":self.middle_sec,
@@ -176,13 +182,14 @@ class MultimodalData(object):
             self.middle_sec.append(middle_sec)
             self.shot_sec.append(shot_sec)
 
-            if self.image: self.image_data.append(f'./BBC_Planet_Earth_Dataset/frame/bbc_{self.episode}/{middle_frame}.jpg')
-            if self.audio: self.audio_data.append(self.dub_audio(shot_id,middle_sec*1000))
-            """ TODO: text datat"""
+            self.image_data.append(f'./BBC_Planet_Earth_Dataset/frame/bbc_{self.episode}/{middle_frame}.jpg')
+            self.audio_data.append(self.dump_audio(shot_id,middle_sec*1000))
+            """ TODO: text data"""
+            self.text_data.append(self.dump_text(start_sec, end_sec))
 
             shot_id += 1
     
-    def dub_audio(self, shot_id, middle_ms, ms_width=5000):
+    def dump_audio(self, shot_id, middle_ms, ms_width=5000):
         audio_dir = f'./BBC_Planet_Earth_Dataset/audio/bbc_{self.episode}/'
         if not os.path.exists(audio_dir): os.makedirs(audio_dir)
         audio_path = f'{audio_dir}{shot_id}.wav'
@@ -190,6 +197,29 @@ class MultimodalData(object):
         shot_sound = self.sound[middle_ms-ms_width:middle_ms+ms_width]
         if not os.path.exists(audio_path): shot_sound.export(audio_path+'', format="wav")
         return audio_path
+    
+    # Deep Siamese Networksの方
+    def dump_text(self, start_sec, end_sec):
+        # 20secより大きいかどうか
+        # 大きければその区間のtextを抽出
+        if (end_sec - start_sec) > 20:
+            start_text_sec = start_sec
+            end_text_sec = end_sec
+        # そうでなければ中心から前後で20secのtextを抽出
+        else: 
+            middle_sec = (end_sec - start_sec)/2 + start_sec
+            start_text_sec = middle_sec - 10
+            end_text_sec = middle_sec + 10
+        
+        # 検索
+        df_text = self.text[(self.text['start_sec'] > start_text_sec ) & (self.text['end_sec'] < end_text_sec)]
+        text = pd.DataFrame([df_text['text'].str.cat(sep=' ')])
+        # print(text[0][0])
+
+        return text[0][0]
+
+#%%  debugで1回だけ
+# multimodaldata = MultimodalData('0', '01_From_Pole_to_Pole')
 
 #%%
 movie_name_list = [os.path.basename(i) for i in sorted(glob.glob('./BBC_Planet_Earth_Dataset/annotations/shots/*'))]

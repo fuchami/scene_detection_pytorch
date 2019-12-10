@@ -19,6 +19,12 @@ My research theme  
 + [x]: SiameseNetの実装
 + [x]: 学習フェーズの実装
 
+# Memo...
+- LossのL2項
+- distanceのl2 distance
+- Online TripletNetworks
+- CNNのFine Tuning
+
 # Code Structure
 - **data_preprocessing.py**
   - データの前処理を行う
@@ -42,5 +48,3 @@ ssh username@IP_Address -L 6006:localhost:6006
 tensorboard --logdir <log_dir>
 
 ```
-
-### auddio
