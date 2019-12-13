@@ -142,7 +142,7 @@ class MultimodalData(object):
         dataset.replace(np.nan, ' ', inplace=True)
 
         if not os.path.exists(save_dir): os.makedirs(save_dir)
-        dataset.to_csv(f'{save_dir}{movie_name}.csv')
+        dataset.to_csv(f'{save_dir}{movie_name}.csv', index=False)
 
     def load_shot_txt(self, path):
         with open(path, 'r') as f:
@@ -186,12 +186,11 @@ class MultimodalData(object):
 
             self.image_data.append(f'./BBC_Planet_Earth_Dataset/frame/bbc_{self.episode}/{middle_frame}.jpg')
             self.audio_data.append(self.dump_audio(shot_id,middle_sec*1000))
-            """ TODO: text data"""
             self.text_data.append(self.dump_text(start_sec, end_sec))
 
             shot_id += 1
     
-    def dump_audio(self, shot_id, middle_ms, ms_width=5000):
+    def dump_audio(self, shot_id, middle_ms, ms_width=10000):
         audio_dir = f'./BBC_Planet_Earth_Dataset/audio/bbc_{self.episode}/'
         if not os.path.exists(audio_dir): os.makedirs(audio_dir)
         audio_path = f'{audio_dir}{shot_id}.wav'
@@ -235,4 +234,30 @@ for annotator in annotators_list:
         movie_name,_ = os.path.splitext(movie_name)
         multimodaldata = MultimodalData(annotator, movie_name)
 
-#%%
+#%% csv merge debug
+test_path='./BBC_Planet_Earth_Dataset/dataset/annotator_0/01_From_Pole_to_Pole.csv'
+
+# self.test_df = pd.read_csv(test_path)
+train_csv_list = sorted(list(set(glob.glob(os.path.dirname(test_path)+'/*')) - set([test_path])))
+print(train_csv_list)
+print(len(train_csv_list))
+
+train_df = None
+for train_csv in train_csv_list:
+    if train_df is None:
+        train_df = pd.read_csv(train_csv)
+    else:
+        _df = pd.read_csv(train_csv)
+        shot_id = train_df['shot_id'].max() +1
+        scene_id = train_df['scene_id'].max() +1
+        print('shot_id max:', shot_id)
+        print('scene_id max:', scene_id)
+        _df['shot_id'] = _df['shot_id'] + shot_id
+        _df['scene_id'] = _df['scene_id'] + scene_id
+
+        train_df = pd.concat([train_df, _df])
+
+train_df.head()
+train_df.tail()
+
+# %%

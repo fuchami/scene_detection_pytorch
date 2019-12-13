@@ -7,9 +7,11 @@ import torchvision.models as models
 from transformers import BertModel
 from compact_bilinear_pooling import CountSketch, CompactBilinearPooling
 
+from models.extractor import ImageExtractor, BERT, VGGish
+
 class EmbeddingNet(nn.Module):
     def __init__(self, image=False, audio=False, text=False, time=False,
-                mcb=False):
+                merge='concat'):
         super(EmbeddingNet, self).__init__()
 
         nn_input = 0
@@ -17,19 +19,19 @@ class EmbeddingNet(nn.Module):
         self.audio_extract = False
         self.text_extract  = False
         self.timestamp     = False
-        self.mcb = mcb
+        self.merge         = merge
 
         if image:
             self.image_extract = True 
-            self.image_extractor = ImageExtractor()
-            self.image_extractor.eval() # 評価用に固定すべき?
+            self.image_extractor = ImageExtractor(model='res')
             nn_input += 2048
         if audio:
             self.audio_extract = True 
-            self.audio_extractor = AudioCNN()
-            nn_input += 2048
+            self.audio_extractor = VGGish()
+            nn_input += 2560
         if text:
             self.text_extract = True
+            self.bert = BERT()
             nn_input += 768
         if time:
             self.timestamp = True
@@ -58,18 +60,26 @@ class EmbeddingNet(nn.Module):
         concat_list = []
 
         if self.image_extract:
-            img_out = self.image_extractor(x['image'])
-            concat_list.append(img_out)
+            img_feature = self.image_extractor(x['image'])
+            print('img_feature: ', img_feature.size())
+            concat_list.append(img_feature)
         if self.audio_extract:
-            aud_out = self.audio_extractor(x['audio'])
-            concat_list.append(aud_out)
+            aud_feature = self.aud_extractor(x['audio'])
+            
+            print('aud_feature: ', aud_feature.size())
+            concat_list.append(aud_feature)
         if self.text_extract:
-            txt_out = x['text']
-            concat_list.append(txt_out)
+            # txt_feature = x['text']
+            txt_feature = self.bert(x['text'])
+
+            print('txt_feature: ', txt_feature.size())
+            concat_list.append(txt_feature)
         if self.timestamp:
             concat_list.append(x['timestamp'])
         
-        output = torch.cat(concat_list, dim=1)
+        if self.merge == 'concat':
+            output = torch.cat(concat_list, dim=1)
+
         output = self.fc(output)
         
         return output
@@ -78,65 +88,4 @@ class EmbeddingNet(nn.Module):
         return self.forward(x)
 
 
-class ImageExtractor(nn.Module):
-    def __init__(self, model='res'):
-        """
-        res: ResNet-152
-        vgg: VGG-16
-        """
-        super(ImageExtractor, self).__init__()
-        if model=='res':
-            """ load ResNet-152 """
-            resnet = models.resnet152(pretrained=True)
-            self.trained_model = nn.Sequential(*list(resnet.children())[:-1])
-        
-        # Freeze layer
-        for param in self.trained_model.parameters():
-            param.requires_grad = False
-    
-    def forward(self, x):
-        x = self.trained_model(x)
-        x = x.view(x.size()[0], -1)
-        return x
 
-class AudioCNN(nn.Module):
-    def __init__(self):
-        super(AudioCNN, self).__init__()
-        self.layer1 = nn.Sequential(
-            nn.Conv2d(1, 32, kernel_size=(3,3), padding=2),
-            nn.BatchNorm2d(32),
-            nn.ReLU(),
-            nn.MaxPool2d(2))
-
-        self.layer2 = nn.Sequential(
-            nn.Conv2d(32, 64, kernel_size=(3,3), padding=2),
-            nn.BatchNorm2d(64),
-            nn.ReLU(),
-            nn.MaxPool2d(2))
-
-        self.layer3 = nn.Sequential(
-            nn.Conv2d(64, 128, kernel_size=(3,3), padding=2),
-            nn.BatchNorm2d(128),
-            nn.ReLU(),
-            nn.MaxPool2d(2))
-
-        self.layer4 = nn.Sequential(
-            nn.Conv2d(128, 256, kernel_size=(3,3), padding=2),
-            nn.BatchNorm2d(256),
-            nn.ReLU(),
-            nn.MaxPool2d(2))
-
-        self.fc = nn.Linear(256*9*28, 2048)
-    
-    def forward(self, x):
-        x = self.layer1(x)
-        x = self.layer2(x)
-        x = self.layer3(x)
-        x = self.layer4(x)
-        x = F.avg_pool2d(x, (1,1))
-
-        x = x.view(x.size(0), -1)
-        x = F.relu(self.fc(x))
-        # print('audio_cnn forward:',x.size())
-
-        return x
