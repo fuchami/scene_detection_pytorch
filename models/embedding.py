@@ -27,7 +27,7 @@ class EmbeddingNet(nn.Module):
             nn_input += 2048
         if audio:
             self.audio_extract = True 
-            self.audio_extractor = VGGish()
+            # self.audio_extractor = VGGish()
             nn_input += 2560
         if text:
             self.text_extract = True
@@ -80,6 +80,7 @@ class EmbeddingNet(nn.Module):
         if self.merge == 'concat':
             output = torch.cat(concat_list, dim=1)
 
+        print(output.size()) # ([3, nn_input])
         output = self.fc(output)
         
         return output

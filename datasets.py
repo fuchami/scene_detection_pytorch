@@ -2,6 +2,7 @@
 import numpy as np
 import pandas as pd
 import librosa, scipy
+import os, sys, glob, csv
 from PIL import Image
 
 import torch
@@ -10,21 +11,41 @@ from torch.utils.data.sampler import BatchSampler
 from torchvision import transforms
 
 from transformers import BertTokenizer,BertModel
+from torchvggish import vggish_input
+from models.extractor import *
 
 class SiameseMulti(Dataset):
-    def __init__(self, csv_path=None, transform=None, train=True,
-                    image=False, timestamp=False, audio=False, text=False):
+    def __init__(self, test_path='./BBC_Planet_Earth_Dataset/dataset/annotator_0/01_From_Pole_to_Pole.csv',
+                    transform=None, train=True,
+                    image=False, timestamp=False, audio=False, text=False,
+                    visual_model='vgg'):
         """
-        1. Image
-        2. TimeStamp( start_sec, end_sec, shot_sec)
-        3. Audio
-        4. text
+        1. Image: ResNet or VGG 
+        2. Audio: VGGish 
+        4. text: BERT 
+        4. TimeStamp( start_sec, end_sec, shot_sec)
+        """
 
-        TODO: 
-            - trainをすべてmerge
-            - csv_pathはtext csvにする
-        """
-        self.train_df       = pd.read_csv('./BBC_Planet_Earth_Dataset/dataset/annotator_0/01_From_Pole_to_Pole.csv')
+        """ test以外のcsvファイルをすべてマージしてtrainとする"""
+        self.test_df = pd.read_csv(test_path)
+        train_csv_list = list(set(glob.glob(os.path.dirname(test_path)+'/*')) - set([test_path]))
+        # print('train data list:', train_csv_list)
+        print('test data:', test_path)
+        self.train_df = None
+        for train_csv in train_csv_list:
+            if self.train_df is None:
+                self.train_df = pd.read_csv(train_csv)
+            else:
+                _df = pd.read_csv(train_csv)
+                shot_id = self.train_df['shot_id'].max() +1
+                scene_id = self.train_df['scene_id'].max() +1
+                # print('shot_id max:', shot_id)
+                # print('scene_id max:', scene_id)
+                _df['shot_id'] = _df['shot_id'] + shot_id
+                _df['scene_id'] = _df['scene_id'] + scene_id
+
+                self.train_df = pd.concat([self.train_df, _df])
+
         self.train          = train # これでtrain/testの切り替えを行う
         self.transform      = transform
         self.image_load     = image
@@ -46,9 +67,8 @@ class SiameseMulti(Dataset):
         if self.audio_load: self.audios = list(self.train_df.audio.unique())
         if self.text_load:
             self.texts = list(self.train_df.text)
-            self.tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
-            self.bert = BertModel.from_pretrained('bert-base-uncased')
-            self.bert.eval()
+            # self.tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
+            # self.bert = BertModel.from_pretrained('bert-base-uncased')
 
         print('============================')
         print('--- MultimodalDataset ---')
@@ -297,4 +317,4 @@ if __name__ == "__main__":
         normalize])
 
     multimodaldataset = SiameseMulti(transform=transform ,train=True,
-                                            image=False, audio=True, timestamp=False, text=True)
+                                            image=False, audio=True, timestamp=True, text=True)

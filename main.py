@@ -48,10 +48,10 @@ def main(args):
                                     normalize])
     
     if args.model == 'siamese':
-        train_dataset = SiameseMulti(csv_path=None, transform=transform, train=True, 
+        train_dataset = SiameseMulti(transform=transform, train=True, visual_model=args.img_model,
                                     image=args.image, timestamp=args.time, audio=args.audio, text=args.text)
     elif args.model == 'triplet':
-        train_dataset = TripletMulti(csv_path=None, transform=transform, train=True, 
+        train_dataset = TripletMulti(transform=transform, train=True, visual_model=args.img_model,
                                     image=args.image, timestamp=args.time, audio=args.audio, text=args.text)
 
     kwards = {'num_workers':1, 'pin_memory': True} if cuda else {}
@@ -115,12 +115,12 @@ if __name__ == "__main__":
     parser.add_argument('--model', default='siamese')
     parser.add_argument('--image',  '-i', default=True)
     parser.add_argument('--audio',  '-a', default=False)
+    parser.add_argument('--text',  '-t', default=False)
     parser.add_argument('--time',  '-s', default=True)
-    parser.add_argument('--text',  '-t', default=True)
 
     parser.add_argument('--epochs', '-e', default=100, type=int)
     parser.add_argument('--output_unit', default=128, type=int)
-    parser.add_argument('--batchsize', '-b', default=128, type=int)
+    parser.add_argument('--batchsize', '-b', default=3, type=int)
     parser.add_argument('--learning_rate', '-r', default=1e-2)
     parser.add_argument('--log_interval', '-l', default=50, type=int)
     parser.add_argument('--optimizer', '-o' ,default='adam')

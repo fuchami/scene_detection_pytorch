@@ -12,7 +12,8 @@ text1: ショットの中心フレームを中心にmax(Ws, 20sec)のコンテ�
     Ws:ショットの継続時間
 tex2:
 
-[shot_id, scene_id, start_frame, end_frame, image, audio, text, start_time, end_time, shot_length]
+[shot_id, scene_id, start_frame, end_frame, image, audio, text, start_time, end_time, shot_length
+    image_feature_path, audio_feature_path, text_feature_path ]
 """
 
 #%% 

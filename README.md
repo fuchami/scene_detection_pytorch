@@ -2,15 +2,15 @@
 My research theme  
 
 # TODO List
-+ [ ]: textの前処理
-+ [ ]: trainデータをmergeするコード(dataloader内)
++ [ ]: Feature Extraction
 + [ ]: eval テストデータで評価を行うコードを書く
++ [ ]: Compact Bilinear Poolingの実装
 
 + [ ]: LossのDistanceをCosineに
-+ [ ]: Compact Bilinear Poolingの実装
-+ [ ]: 音声のNN
 + [ ]: 各シーンのフレーム一覧
 
++ [x]: trainデータをmergeするコード(dataloader内)
++ [x]: textの前処理
 + [x]: tensorboard Embedding
 + [x]: TripletNetの実装
 + [x]: TripletNetのT-SNE Embedding
@@ -43,6 +43,9 @@ https://vaaaaaanquish.hatenablog.com/entry/2019/02/23/214036
 
 ・BERT Tutorial
 http://mccormickml.com/2019/05/14/BERT-word-embeddings-tutorial/#3-extracting-embeddings
+
+・VGGish
+https://github.com/harritaylor/torchvggish
 
 
 ## Usage TensorBoard
