@@ -19,20 +19,30 @@ class EmbeddingNet(nn.Module):
         self.timestamp     = False
         self.merge         = merge
 
-        if image:
-            self.image_feature = True 
-            nn_input += 2048
-        if audio:
-            self.audio_feature = True 
-            nn_input += 2560
-        if text:
-            self.text_feature = True
-            nn_input += 768
-        if time:
-            self.timestamp = True
-            nn_input += 3
+        if self.merge == 'concat':
+            if image:
+                self.image_feature = True 
+                nn_input += 2048
+            if audio:
+                self.audio_feature = True 
+                nn_input += 2560
+            if text:
+                self.text_feature = True
+                nn_input += 768
+            if time:
+                self.timestamp = True
+                nn_input += 3
 
-        print('nn_input:', nn_input)
+            print('nn_input:', nn_input)
+
+        if self.merge == 'mcb':
+            input_size = 2048
+            output_size = 16000
+
+            self.fc_audio = nn.Sequential(nn.Linear(2560, 2048), nn.ReLU())
+            self.mcb = CompactBilinearPooling(input_size,input_size, output_size).cuda()
+
+            nn_input = 16000
 
         # normal
         self.fc = nn.Sequential(nn.Linear(nn_input, 512), nn.ReLU(),
@@ -52,27 +62,30 @@ class EmbeddingNet(nn.Module):
                                 nn.Linear(256, 128))
     
     def forward(self, x):
-        concat_list = []
-
-        if self.image_feature:
-            img_feature = x['image']
-            # print('img_feature: ', img_feature.size())
-            concat_list.append(img_feature)
-        if self.audio_feature:
-            aud_feature = x['audio']
-            # print('aud_feature: ', aud_feature.size())
-            concat_list.append(aud_feature)
-        if self.text_feature:
-            txt_feature = x['text']
-            # print('txt_feature: ', txt_feature.size())
-            concat_list.append(txt_feature)
-        if self.timestamp:
-            concat_list.append(x['timestamp'])
-        
         if self.merge == 'concat':
-            output = torch.cat(concat_list, dim=1)
+            concat_list = []
 
-        print('output size' ,output.size()) # ([3, nn_input])
+            if self.image_feature:
+                img_feature = x['image']
+                # print('img_feature: ', img_feature.size())
+                concat_list.append(img_feature)
+            if self.audio_feature:
+                aud_feature = x['audio']
+                # print('aud_feature: ', aud_feature.size())
+                concat_list.append(aud_feature)
+            if self.text_feature:
+                txt_feature = x['text']
+                # print('txt_feature: ', txt_feature.size())
+                concat_list.append(txt_feature)
+            if self.timestamp:
+                concat_list.append(x['timestamp'])
+            
+                output = torch.cat(concat_list, dim=1)
+        else:
+            audio_feature = self.fc_audio(x['audio'])
+            output = self.mcb(x['image'], audio_feature)
+
+        # print('output size' ,output.size()) # ([3, nn_input])
         output = self.fc(output)
         
         return output

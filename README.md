@@ -1,8 +1,8 @@
 # scene_detection_pytorch
-My research theme  
+
+My research repository  
 
 # TODO List
-+ [ ]: Feature Extraction
 + [ ]: eval テストデータで評価を行うコードを書く
 + [ ]: Compact Bilinear Poolingの実装
 
