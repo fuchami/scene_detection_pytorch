@@ -114,8 +114,8 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='')
     parser.add_argument('--model', default='siamese')
     parser.add_argument('--image',  '-i', default=True)
-    parser.add_argument('--audio',  '-a', default=False)
-    parser.add_argument('--text',  '-t', default=False)
+    parser.add_argument('--audio',  '-a', default=True)
+    parser.add_argument('--text',  '-t', default=True)
     parser.add_argument('--time',  '-s', default=True)
 
     parser.add_argument('--epochs', '-e', default=100, type=int)

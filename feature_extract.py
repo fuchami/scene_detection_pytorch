@@ -89,8 +89,8 @@ class ExtraFeature(object):
             print(txt_feature_path)
 
             # ファイルがなければ特徴抽出
-            if os.path.isfile(txt_feature_path+'.npg'):
-                print('already exist text feature as npz: ', txt_feature_path)
+            if os.path.isfile(txt_feature_path+'.npy'):
+                print('already exist text feature as npy: ', txt_feature_path)
             else:
                 txt = torch.tensor([self.tokenizer.encode(row.text, add_special_tokens=True)]).cuda()
                 with torch.no_grad():
@@ -101,7 +101,7 @@ class ExtraFeature(object):
                 txt_emb = txt_emb.cpu().detach().numpy()
                 np.save(txt_feature_path,  txt_emb)
                 print('save text features as npy :', txt_feature_path)
-                self.text_feature_path.append(txt_feature_path+'.npy')
+            self.text_feature_path.append(txt_feature_path+'.npy')
     
     def image_extra(self):
         for row in self.csv_path.itertuples():
@@ -113,13 +113,13 @@ class ExtraFeature(object):
 
             # ファイルがなければ特徴抽出
             if os.path.isfile(img_feature_path+'.npy'):
-                print('already exist image feature as npz: ', img_feature_path)
+                print('already exist image feature as npy: ', img_feature_path)
             else: 
                 img_feature = self.image_extractor(self.image_open(row.image))
                 img_feature = img_feature.cpu().detach().numpy()
                 np.save(img_feature_path, img_feature)
                 print('save image feature as npy:', img_feature)
-                self.image_feature_path.append(img_feature_path+'.npy')
+            self.image_feature_path.append(img_feature_path+'.npy')
     
     def audio_extra(self):
         for row in self.csv_path.itertuples():
@@ -141,7 +141,7 @@ class ExtraFeature(object):
                 aud_feature = aud_feature.cpu().detach().numpy()
                 np.save(aud_feature_path, aud_feature)
                 print('save audio feature as npz:', aud_feature)
-                self.audio_feature_path.append(aud_feature_path+'.npy')
+            self.audio_feature_path.append(aud_feature_path+'.npy')
         
     def image_open(self, t):
         image = Image.open(t)

@@ -10,10 +10,6 @@ from torch.utils.data import Dataset
 from torch.utils.data.sampler import BatchSampler
 from torchvision import transforms
 
-from transformers import BertTokenizer,BertModel
-from torchvggish import vggish_input
-from models.extractor import *
-
 class SiameseMulti(Dataset):
     def __init__(self, test_path='./BBC_Planet_Earth_Dataset/dataset/annotator_0/01_From_Pole_to_Pole.csv',
                     transform=None, train=True,
@@ -53,124 +49,108 @@ class SiameseMulti(Dataset):
         self.audio_load     = audio 
         self.text_load      = text 
 
-        self.labels = list(self.train_df.scene_id)
-        self.labels_set = set(self.train_df.scene_id.unique())
-        self.label_to_indices = {label: np.where(self.train_df.scene_id == label)[0]
-                                for label in self.labels_set}
-        # print('self.label_set:', self.labels_set)
-        # print('self.labels_to_indices:',  self.label_to_indices)
-        self.start_sec = list(self.train_df.start_sec)
-        self.end_sec   = list(self.train_df.end_sec)
-        self.shot_sec  = list(self.train_df.shot_sec)
+        # train data log
+        if self.train:
+            self.labels = list(self.train_df.scene_id)
+            self.labels_set = set(self.train_df.scene_id.unique())
+            self.label_to_indices = {label: np.where(self.train_df.scene_id == label)[0]
+                                    for label in self.labels_set}
+            # print('self.label_set:', self.labels_set)
+            # print('self.labels_to_indices:',  self.label_to_indices)
+            self.start_sec = list(self.train_df.start_sec)
+            self.end_sec   = list(self.train_df.end_sec)
+            self.shot_sec  = list(self.train_df.shot_sec)
 
-        if self.image_load: self.images = list(self.train_df.image.unique())
-        if self.audio_load: self.audios = list(self.train_df.audio.unique())
-        if self.text_load:
-            self.texts = list(self.train_df.text)
-            # self.tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
-            # self.bert = BertModel.from_pretrained('bert-base-uncased')
+            if self.image_load: self.images = list(self.train_df.image_feature_path)
+            if self.audio_load: self.audios = list(self.train_df.audio_feature_path)
+            if self.text_load:  self.texts  = list(self.train_df.text_feature_path)
 
-        print('============================')
-        print('--- MultimodalDataset ---')
-        print(self.train_df.head())
-        print('start_sec: ', len(self.start_sec))
-        print('end_sec: ', len(self.end_sec))
-        print('shot_sec', len(self.shot_sec))
-        print('labels', len(self.labels))
-        print('============================')
-    
-    def image_open(self, t):
-        image = Image.open(t)
-        # transformするならする
-        if self.transform is None:
-            return image
+            print('============================')
+            print('--- MultimodalDataset ---')
+            print(self.train_df.head())
+            print('start_sec: ', len(self.start_sec))
+            print('end_sec: ', len(self.end_sec))
+            print('shot_sec', len(self.shot_sec))
+            print('labels', len(self.labels))
+            print('============================')
+        # test data log
         else:
-            return self.transform(image)
-        
-    def audio_open(self, t):
-        y, fs = librosa.load(t)
-        melsp = librosa.feature.melspectrogram(y=y, sr=fs)
-
-        # (1, 128, 431)のtensorへ
-        melsp = torch.unsqueeze(torch.tensor(melsp), 0)
-        # print(melsp.size())
-        return melsp
+            # TODO: テストデータ用も書く!
+            pass
     
     def __getitem__(self, index):
+        data1 = {}
+        data2 = {}
+
         if self.train:
             target = np.random.randint(0,2) # 0or1をランダムに選択
             label1 = self.labels[index]
             img1_path = self.images[index]
-
-            if self.image_load: img1 = self.images[index]
-            if self.audio_load: aud1 = self.audios[index]
-            if self.text_load:  txt1 = self.texts[index]
-
-            """ time stamp 1 feature or 3 feature? """
-            # if self.timestamp_load: timestamp1 = [self.shot_sec[index]]
-            if self.timestamp_load: timestamp1 = [self.shot_sec[index], self.start_sec[index], self.end_sec[index]]
 
             label_count = len(self.label_to_indices[label1])
 
             # negative pairs
             # 同一ショットが一つの場合もtarget=0に
             if target == 0 or label_count < 2 :
-                # print('target == 0')
                 target = 0 # 強制的にtargetを0に
                 siamese_label = np.random.choice(list(self.labels_set - (set([label1]))))
                 siamese_index =  np.random.choice(self.label_to_indices[siamese_label])
             # positive pairs
             else:
-                # print('target == 1')
                 siamese_index = index
                 while siamese_index == index:
                     siamese_index = np.random.choice(self.label_to_indices[label1])
 
-            if self.image_load: img2 = self.images[siamese_index]
+            if self.audio_load: aud1 = self.audios[index]
+            if self.text_load:  txt1 = self.texts[index]
             if self.audio_load: aud2 = self.audios[siamese_index]
             if self.text_load:  txt2 = self.texts[siamese_index]
-            # if self.timestamp_load: timestamp2 = [self.shot_sec[siamese_index]]
-            if self.timestamp_load: timestamp2 = [self.shot_sec[siamese_index], self.start_sec[siamese_index], self.end_sec[siamese_index]]
 
         else:
             # TODO:テストデータ用の処理を書く
             pass
 
-        data1 = {}
-        data2 = {}
-
         """ load image """
         if self.image_load:
-            img1 = self.image_open(img1)
-            img2 = self.image_open(img2)
+            img1 = np.load(self.images[index])
+            img2 = np.load(self.images[siamese_index])
+            img1 = torch.from_numpy(img1) # torch.Size([1, 2048])
+            img2 = torch.from_numpy(img2)
+
+            img1 = torch.squeeze(img1, dim=0)
+            img2 = torch.squeeze(img2, dim=0)  
             data1['image'] = img1
             data2['image'] = img2
 
         """ load audio """
         if self.audio_load:
-            aud1 = self.audios[index]
-            aud1 = self.audio_open(aud1)
-            aud2 = self.audios[siamese_index]
-            aud2 = self.audio_open(aud2)
+            aud1 = np.load(self.audios[index])
+            aud2 = np.load(self.audios[siamese_index])
+            aud1 = torch.from_numpy(aud1) # torch.Size([1, 20, 128])
+            aud2 = torch.from_numpy(aud2)
+
+            aud1 = torch.squeeze(aud1.view(aud1.size()[0], -1), dim=0)
+            aud2 = torch.squeeze(aud2.view(aud2.size()[0], -1), dim=0)
             data1['audio'] = aud1
             data2['audio'] = aud2
         
         """ load text """
         if self.text_load:
-            txt1 = torch.tensor([self.tokenizer.encode(txt1, add_special_tokens=True)])
-            txt2 = torch.tensor([self.tokenizer.encode(txt2, add_special_tokens=True)])
-
-            # もうここでBERT word Embeddingやっちゃう！
-            # TODO: となるとImageExtractもここでやっちゃったほうがいい？
-            with torch.no_grad():
-                txt1 = self.bert(txt1)[0][0]
-                txt2 = self.bert(txt2)[0][0]
-
-            data1['text'] = torch.mean(txt1, dim=0)
-            data2['text'] = torch.mean(txt2, dim=0)
+            txt1 = np.load(self.texts[index])
+            txt2 = np.load(self.texts[siamese_index])
+            txt1 = torch.from_numpy(txt1) # torch.Size([768])
+            txt2 = torch.from_numpy(txt2)
+            data1['text'] = txt1
+            data2['text'] = txt2
 
         """ load timestamp """
         if self.timestamp_load:
+            """ time stamp 1 feature or 3 feature? """
+            # if self.timestamp_load: timestamp1 = [self.shot_sec[index]]
+            # if self.timestamp_load: timestamp2 = [self.shot_sec[siamese_index]]
+            if self.timestamp_load: timestamp1 = [self.shot_sec[index], self.start_sec[index], self.end_sec[index]]
+            if self.timestamp_load: timestamp2 = [self.shot_sec[siamese_index], self.start_sec[siamese_index], self.end_sec[siamese_index]]
+
             timestamp1 = torch.tensor(timestamp1)
             timestamp2 = torch.tensor(timestamp2)
             data1['timestamp'] = timestamp1
