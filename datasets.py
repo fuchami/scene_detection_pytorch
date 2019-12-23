@@ -21,27 +21,6 @@ class SiameseMulti(Dataset):
         4. text: BERT 
         4. TimeStamp( start_sec, end_sec, shot_sec)
         """
-
-        """ test以外のcsvファイルをすべてマージしてtrainとする"""
-        self.test_df = pd.read_csv(test_path)
-        train_csv_list = list(set(glob.glob(os.path.dirname(test_path)+'/*')) - set([test_path]))
-        # print('train data list:', train_csv_list)
-        print('test data:', test_path)
-        self.train_df = None
-        for train_csv in train_csv_list:
-            if self.train_df is None:
-                self.train_df = pd.read_csv(train_csv)
-            else:
-                _df = pd.read_csv(train_csv)
-                shot_id = self.train_df['shot_id'].max() +1
-                scene_id = self.train_df['scene_id'].max() +1
-                # print('shot_id max:', shot_id)
-                # print('scene_id max:', scene_id)
-                _df['shot_id'] = _df['shot_id'] + shot_id
-                _df['scene_id'] = _df['scene_id'] + scene_id
-
-                self.train_df = pd.concat([self.train_df, _df])
-
         self.train          = train # これでtrain/testの切り替えを行う
         self.transform      = transform
         self.image_load     = image
@@ -49,8 +28,26 @@ class SiameseMulti(Dataset):
         self.audio_load     = audio 
         self.text_load      = text 
 
-        # train data log
+        """ train data loading... """
         if self.train:
+            """ test以外のcsvファイルをすべてマージしてtrainとする"""
+            train_csv_list = list(set(glob.glob(os.path.dirname(test_path)+'/*')) - set([test_path]))
+            # print('train data list:', train_csv_list)
+
+            self.train_df = None
+            for train_csv in train_csv_list:
+                if self.train_df is None:
+                    self.train_df = pd.read_csv(train_csv)
+                else:
+                    _df = pd.read_csv(train_csv)
+                    shot_id = self.train_df['shot_id'].max() +1
+                    scene_id = self.train_df['scene_id'].max() +1
+                    _df['shot_id'] = _df['shot_id'] + shot_id
+                    _df['scene_id'] = _df['scene_id'] + scene_id
+
+                    self.train_df = pd.concat([self.train_df, _df])
+
+            """ loading """
             self.labels = list(self.train_df.scene_id)
             self.labels_set = set(self.train_df.scene_id.unique())
             self.label_to_indices = {label: np.where(self.train_df.scene_id == label)[0]
@@ -65,18 +62,38 @@ class SiameseMulti(Dataset):
             if self.audio_load: self.audios = list(self.train_df.audio_feature_path)
             if self.text_load:  self.texts  = list(self.train_df.text_feature_path)
 
-            print('============================')
-            print('--- MultimodalDataset ---')
-            print(self.train_df.head())
-            print('start_sec: ', len(self.start_sec))
-            print('end_sec: ', len(self.end_sec))
-            print('shot_sec', len(self.shot_sec))
-            print('labels', len(self.labels))
-            print('============================')
-        # test data log
         else:
-            # TODO: テストデータ用も書く!
-            pass
+            self.test_df = pd.read_csv(test_path)
+            self.test_labels = list(self.test_df.scene_id)
+            self.labels_set  = set(self.test_df.scene_id.unique())
+            self.label_to_indices = {label: np.where(self.test_df.scene_id == label)[0]
+                                    for label in self.labels_set}
+            print('self.label_set:', self.labels_set)
+            print('self.label_to_indices:', self.label_to_indices)
+            self.start_sec = list(self.test_df.start_sec)
+            self.end_sec   = list(self.test_df.end_sec)
+            self.shot_sec  = list(self.test_df.shot_sec)
+
+            if self.image_load: self.images = list(self.test_df.image_feature_path)
+            if self.audio_load: self.audios = list(self.test_df.audio_feature_path)
+            if self.text_load:  self.texts  = list(self.test_df.text_feature_path)
+            
+            random_state = np.random.RandomState(77)
+
+            positive_pairs = [[i,
+                                random_state.choice(self.label_to_indices[self.test_labels[i]]),
+                                1]
+                                for i in range(0, len(self.test_df),2)]
+            negative_pairs = [[i,
+                                random_state.choice(self.label_to_indices[
+                                                        np.random.choice(
+                                                            list(self.labels_set - set([self.test_labels[i]]))
+                                                        )
+                                                    ]),
+                                0]
+                                for i in range(0, len(self.test_df),2)]
+            
+            self.test_pairs = positive_pairs + negative_pairs
     
     def __getitem__(self, index):
         data1 = {}
@@ -101,14 +118,17 @@ class SiameseMulti(Dataset):
                 while siamese_index == index:
                     siamese_index = np.random.choice(self.label_to_indices[label1])
 
-            if self.audio_load: aud1 = self.audios[index]
-            if self.text_load:  txt1 = self.texts[index]
-            if self.audio_load: aud2 = self.audios[siamese_index]
-            if self.text_load:  txt2 = self.texts[siamese_index]
-
         else:
-            # TODO:テストデータ用の処理を書く
-            pass
+            index = self.test_pairs[index][0]
+            siamese_index = self.test_pairs[index][1]
+            target = self.test_pairs[index][2]
+            label1 = self.test_labels[index]
+            img1_path = self.images[index]
+
+        if self.audio_load: aud1 = self.audios[index]
+        if self.text_load:  txt1 = self.texts[index]
+        if self.audio_load: aud2 = self.audios[siamese_index]
+        if self.text_load:  txt2 = self.texts[siamese_index]
 
         """ load image """
         if self.image_load:
@@ -296,5 +316,5 @@ if __name__ == "__main__":
         transforms.ToTensor(),
         normalize])
 
-    multimodaldataset = SiameseMulti(transform=transform ,train=True,
+    multimodaldataset = SiameseMulti(transform=transform ,train=False,
                                             image=False, audio=True, timestamp=True, text=True)
