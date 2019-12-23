@@ -45,8 +45,8 @@ class EmbeddingNet(nn.Module):
             nn_input = 16000
 
         # normal
-        self.fc = nn.Sequential(nn.Linear(nn_input, 512), nn.ReLU(),
-                                nn.Linear(512, 128), nn.ReLU(),
+        self.fc = nn.Sequential(nn.Linear(nn_input, 512), nn.PReLU(),
+                                nn.Linear(512, 128), nn.PReLU(),
                                 nn.Linear(128, 30))
 
         # with BatchNorm
@@ -56,9 +56,9 @@ class EmbeddingNet(nn.Module):
 
         # with dropout
         self.fc_do = nn.Sequential(nn.Linear(nn_input, 512), nn.PReLU(),
-                                nn.Dropout(0.4),
+                                nn.Dropout(0.5),
                                 nn.Linear(512, 256), nn.PReLU(),
-                                nn.Dropout(0.4),
+                                nn.Dropout(0.5),
                                 nn.Linear(256, 128))
     
     def forward(self, x):
@@ -67,15 +67,12 @@ class EmbeddingNet(nn.Module):
 
             if self.image_feature:
                 img_feature = x['image']
-                # print('img_feature: ', img_feature.size())
                 concat_list.append(img_feature)
             if self.audio_feature:
                 aud_feature = x['audio']
-                # print('aud_feature: ', aud_feature.size())
                 concat_list.append(aud_feature)
             if self.text_feature:
                 txt_feature = x['text']
-                # print('txt_feature: ', txt_feature.size())
                 concat_list.append(txt_feature)
             if self.timestamp:
                 concat_list.append(x['timestamp'])
@@ -86,7 +83,7 @@ class EmbeddingNet(nn.Module):
             output = self.mcb(x['image'], audio_feature)
 
         # print('output size' ,output.size()) # ([3, nn_input])
-        output = self.fc(output)
+        output = self.fc_bn(output)
         
         return output
     

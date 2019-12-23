@@ -12,9 +12,7 @@ from torchvision import transforms
 
 class SiameseMulti(Dataset):
     def __init__(self, test_path='./BBC_Planet_Earth_Dataset/dataset/annotator_0/01_From_Pole_to_Pole.csv',
-                    transform=None, train=True,
-                    image=False, timestamp=False, audio=False, text=False,
-                    visual_model='vgg'):
+                    train=True, image=False, timestamp=False, audio=False, text=False):
         """
         1. Image: ResNet or VGG 
         2. Audio: VGGish 
@@ -22,7 +20,6 @@ class SiameseMulti(Dataset):
         4. TimeStamp( start_sec, end_sec, shot_sec)
         """
         self.train          = train # これでtrain/testの切り替えを行う
-        self.transform      = transform
         self.image_load     = image
         self.timestamp_load = timestamp
         self.audio_load     = audio 
@@ -68,8 +65,8 @@ class SiameseMulti(Dataset):
             self.labels_set  = set(self.test_df.scene_id.unique())
             self.label_to_indices = {label: np.where(self.test_df.scene_id == label)[0]
                                     for label in self.labels_set}
-            print('self.label_set:', self.labels_set)
-            print('self.label_to_indices:', self.label_to_indices)
+            # print('self.label_set:', self.labels_set)
+            # print('self.label_to_indices:', self.label_to_indices)
             self.start_sec = list(self.test_df.start_sec)
             self.end_sec   = list(self.test_df.end_sec)
             self.shot_sec  = list(self.test_df.shot_sec)
@@ -180,7 +177,7 @@ class SiameseMulti(Dataset):
         return dataset, target, label1, img1_path
 
     def __len__(self):
-        return len(self.labels)
+        return len(self.labels) if self.train else len(self.test_labels)
 
 class TripletMulti(Dataset):
     """
@@ -316,5 +313,4 @@ if __name__ == "__main__":
         transforms.ToTensor(),
         normalize])
 
-    multimodaldataset = SiameseMulti(transform=transform ,train=False,
-                                            image=False, audio=True, timestamp=True, text=True)
+    multimodaldataset = SiameseMulti(train=False, image=False, audio=True, timestamp=True, text=True)

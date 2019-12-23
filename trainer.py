@@ -14,15 +14,24 @@ def fit(train_loader, val_loader, model, loss_fn, optimizer, scheduler,
         train_loss, metrics = train_epoch(train_loader, model, loss_fn, 
                                             optimizer, cuda,
                                             log_interval, metrics)
-        message = 'Epoch: {}/{}. Train set: Average loss: {:.4f}'.format(epoch+1, n_epochs, train_loss)
+        # message = 'Epoch: {}/{}. Train set: Average loss: {:.4f}'.format(epoch+1, n_epochs, train_loss)
+        message = f'Epoch: {epoch+1}/{n_epochs}. Train set: Average loss: {train_loss:.4f}'
         for metric in metrics:
-            message += '\t{}: {}'.format(metric.name, metric.value())
+            # message += '\t{}: {}'.format(metric.name, metric.value())
+            message += f'\t{metric.name}: {metric.value()}'
+
+        
+        # Test stage
+        val_loss, metrics = test_epoch(val_loader, model, loss_fn, cuda, metrics)
+        val_loss /= len(val_loader)
+
+        message += f'\nEpoch: {epoch+1}/{n_epochs} Validation set: Average loss{val_loss:.4}'
+        for metric in metrics:
+            message += f'\t{metric.name()}: {metric.value()}'
 
         """ logging tensorboard """
         writer.add_scalar("train/loss", train_loss, epoch)
-        
-        # Test stage
-        # TODO: あとで書く
+        writer.add_scalar("valid/loss", val_loss, epoch)
 
         print(message)
 
@@ -83,3 +92,38 @@ def train_epoch(train_loader, model, loss_fn, optimizer, cuda,
 
     total_loss /= (batch_idx +1)
     return total_loss, metrics
+
+def test_epoch(val_loader, model, loss_fn, cuda, metrics):
+    with torch.no_grad():
+        for metric in metrics:
+            metric.reset()
+        model.eval()
+        val_loss = 0
+        for batch_idx, (data, target, _, _) in enumerate(val_loader):
+            target = target if len(target) > 0 else None
+            if not type(data) in (tuple, list):
+                data = (data, )
+            if cuda:
+                # めっちゃ見づらいけどすべてのデータをcuda用にしてる
+                for dict_ in data:
+                    for d in dict_:
+                        dict_[d] = dict_[d].cuda()
+                if target is not None:
+                    target = target.cuda()
+            
+            outputs = model(*data)
+            if type(outputs) not in (tuple, list):
+                outputs = (outputs, )
+            loss_inputs = outputs
+            if target is not None:
+                target = (target, )
+                loss_inputs += target
+
+            loss_outputs = loss_fn(*loss_inputs)
+            loss = loss_outputs[0] if type(loss_outputs) in (tuple, list) else loss_outputs
+            val_loss += loss.item()
+
+            for metric in metrics:
+                metric(outputs, target, loss_outputs)
+    
+    return val_loss, metrics

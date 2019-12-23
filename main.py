@@ -40,19 +40,11 @@ def main(args):
     # TODO: ハイパラをtxtにdumpする
 
     """ load dataset """
-    normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
-                                    std=[0.229, 0.224, 0.225])
-
-    transform = transforms.Compose([transforms.Resize(224),
-                                    transforms.ToTensor(),
-                                    normalize])
-    
     if args.model == 'siamese':
-        train_dataset = SiameseMulti(transform=transform, train=True, visual_model=args.img_model,
-                                    image=args.image, timestamp=args.time, audio=args.audio, text=args.text)
+        train_dataset = SiameseMulti(train=True, image=args.image, timestamp=args.time, audio=args.audio, text=args.text)
+        test_dataset = SiameseMulti(train=False, image=args.image, timestamp=args.time, audio=args.audio, text=args.text)
     elif args.model == 'triplet':
-        train_dataset = TripletMulti(transform=transform, train=True, visual_model=args.img_model,
-                                    image=args.image, timestamp=args.time, audio=args.audio, text=args.text)
+        pass # TODO:
 
     kwards = {'num_workers':1, 'pin_memory': True} if cuda else {}
     
@@ -60,12 +52,13 @@ def main(args):
                                             batch_size=args.batchsize,
                                             shuffle=True,
                                             **kwards)
-    # TODO:
-    test_loader = torch.utils.data.DataLoader(train_dataset,
-                                            batch_size=1,
+    test_loader = torch.utils.data.DataLoader(test_dataset,
+                                            batch_size=args.batchsize,
                                             shuffle=False,
                                             **kwards)
+
     print('train_dataset length', len(train_dataset))
+    print('test_dataset length', len(test_dataset))
 
     """ build model """
     if args.model == 'siamese':
@@ -87,14 +80,14 @@ def main(args):
     elif args.optimizer == 'sgd':
         print(f'=== optimizer sgd ===')
         # referenceに乗っ取る
-        optimizer = optim.SGD(model.parameters(), lr=0.01, momentum=0.9, weight_decay=0.0005, nesterov=True)
+        optimizer = optim.SGD(model.parameters(), lr=0.001, momentum=0.9, weight_decay=0.0005, nesterov=True)
 
     scheduler = lr_scheduler.StepLR(optimizer, 8, gamma=0.1, last_epoch=-1)
     n_epochs = args.epochs
     log_interval = args.log_interval
 
     """ train """
-    fit(train_loader, None, model, loss_fn, optimizer,scheduler, n_epochs, cuda, log_interval, writer)
+    fit(train_loader, test_loader, model, loss_fn, optimizer, scheduler, n_epochs, cuda, log_interval, writer)
     
     """ tsne embedding plot """
     train_embeddings_baseline, train_labels_baseline = extract_embeddings(train_loader, model, cuda)
@@ -114,16 +107,16 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='')
     parser.add_argument('--model', default='siamese')
     parser.add_argument('--image',  '-i', default=True)
-    parser.add_argument('--audio',  '-a', default=True)
+    parser.add_argument('--audio',  '-a', default=False)
     parser.add_argument('--text',  '-t', default=True)
     parser.add_argument('--time',  '-s', default=True)
 
-    parser.add_argument('--epochs', '-e', default=100, type=int)
+    parser.add_argument('--epochs', '-e', default=30, type=int)
     parser.add_argument('--output_unit', default=128, type=int)
-    parser.add_argument('--batchsize', '-b', default=3, type=int)
+    parser.add_argument('--batchsize', '-b', default=128, type=int)
     parser.add_argument('--learning_rate', '-r', default=1e-2)
-    parser.add_argument('--log_interval', '-l', default=50, type=int)
-    parser.add_argument('--optimizer', '-o' ,default='adam')
+    parser.add_argument('--log_interval', '-l', default=100, type=int)
+    parser.add_argument('--optimizer', '-o' ,default='sgd')
     parser.add_argument('--img_model', default='res')
     parser.add_argument('--margin', '-m', default=1.)
 
