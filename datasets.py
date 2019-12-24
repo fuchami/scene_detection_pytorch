@@ -71,7 +71,9 @@ class SiameseMulti(Dataset):
             self.end_sec   = list(self.test_df.end_sec)
             self.shot_sec  = list(self.test_df.shot_sec)
 
-            if self.image_load: self.images = list(self.test_df.image_feature_path)
+            if self.image_load:
+                self.images = list(self.test_df.image_feature_path)
+                self.images_path = list(self.test_df.image)
             if self.audio_load: self.audios = list(self.test_df.audio_feature_path)
             if self.text_load:  self.texts  = list(self.test_df.text_feature_path)
             
@@ -99,7 +101,7 @@ class SiameseMulti(Dataset):
         if self.train:
             target = np.random.randint(0,2) # 0or1をランダムに選択
             label1 = self.labels[index]
-            img1_path = self.images[index]
+            img1_path = ""
 
             label_count = len(self.label_to_indices[label1])
 
@@ -120,7 +122,7 @@ class SiameseMulti(Dataset):
             siamese_index = self.test_pairs[index][1]
             target = self.test_pairs[index][2]
             label1 = self.test_labels[index]
-            img1_path = self.images[index]
+            img1_path = self.images_path[index]
 
         if self.audio_load: aud1 = self.audios[index]
         if self.text_load:  txt1 = self.texts[index]

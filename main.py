@@ -57,6 +57,11 @@ def main(args):
                                             shuffle=False,
                                             **kwards)
 
+    tb_loader = torch.utils.data.DataLoader(test_dataset,
+                                            batch_size=1,
+                                            shuffle=False,
+                                            **kwards)
+
     print('train_dataset length', len(train_dataset))
     print('test_dataset length', len(test_dataset))
 
@@ -68,8 +73,9 @@ def main(args):
         model = TripletNet(image=args.image, audio=args.audio, text=args.text, time=args.time)
         loss_fn = TripletLoss(args.margin)
 
-    # images, labels = next(iter(train_loader))
-    # writer.add_graph(model, images)
+    """ tensorboad add graph """
+    data, _, labels, _ = next(iter(train_loader))
+    writer.add_graph(model, data)
     if cuda: model.cuda()
 
     """ define parameters """
@@ -90,11 +96,11 @@ def main(args):
     fit(train_loader, test_loader, model, loss_fn, optimizer, scheduler, n_epochs, cuda, log_interval, writer)
     
     """ tsne embedding plot """
-    train_embeddings_baseline, train_labels_baseline = extract_embeddings(train_loader, model, cuda)
-    plot_embeddings(train_embeddings_baseline, train_labels_baseline, log_dir_name)
+    test_embeddings_baseline, test_labels_baseline = extract_embeddings(test_loader, model, cuda)
+    plot_embeddings(test_embeddings_baseline, test_labels_baseline, log_dir_name)
 
     """ tensorboard embedding """
-    features, labels, label_imgs= tb_embeddings(test_loader, train_dataset, model, cuda)
+    features, labels, label_imgs= tb_embeddings(tb_loader, test_dataset, model, cuda)
     writer.add_embedding(features, metadata=labels, label_img=label_imgs)
 
     """ eval """
@@ -107,18 +113,18 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='')
     parser.add_argument('--model', default='siamese')
     parser.add_argument('--image',  '-i', default=True)
-    parser.add_argument('--audio',  '-a', default=False)
-    parser.add_argument('--text',  '-t', default=True)
+    parser.add_argument('--audio',  '-a', default=True)
+    parser.add_argument('--text',  '-t', default=False)
     parser.add_argument('--time',  '-s', default=True)
 
-    parser.add_argument('--epochs', '-e', default=30, type=int)
+    parser.add_argument('--epochs', '-e', default=100, type=int)
     parser.add_argument('--output_unit', default=128, type=int)
     parser.add_argument('--batchsize', '-b', default=128, type=int)
     parser.add_argument('--learning_rate', '-r', default=1e-2)
     parser.add_argument('--log_interval', '-l', default=100, type=int)
     parser.add_argument('--optimizer', '-o' ,default='sgd')
     parser.add_argument('--img_model', default='res')
-    parser.add_argument('--margin', '-m', default=1.)
+    parser.add_argument('--margin', '-m', default=0.5)
 
     args = parser.parse_args()
     main(args)

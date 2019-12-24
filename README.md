@@ -4,7 +4,8 @@ My research repository  
 
 # TODO List
 + [ ]: eval テストデータで評価を行うコードを書く
-+ [ ]: Compact Bilinear Poolingの実装
++ [ ]: place-365での特徴抽出
++ [ ]: TripletNetDatasetの実装
 
 + [ ]: LossのDistanceをCosineに
 + [ ]: 各シーンのフレーム一覧
@@ -12,18 +13,17 @@ My research repository  
 + [x]: trainデータをmergeするコード(dataloader内)
 + [x]: textの前処理
 + [x]: tensorboard Embedding
-+ [x]: TripletNetの実装
 + [x]: TripletNetのT-SNE Embedding
-+ [x]: AudioCNNの実装
 + [x]: DataLoaderの実装
 + [x]: SiameseNetの実装
 + [x]: 学習フェーズの実装
++ [x]: Compact Bilinear Poolingの実装
 
 # Memo...
+- LerarningRateスケジュール
 - LossのL2項
 - distanceのl2 distance
 - Online TripletNetworks
-- CNNのFine Tuning
 
 # Code Structure
 - **data_preprocessing.py**
@@ -46,6 +46,9 @@ http://mccormickml.com/2019/05/14/BERT-word-embeddings-tutorial/#3-extracting-em
 
 ・VGGish
 https://github.com/harritaylor/torchvggish
+
+・Places-365 pre-trained models
+https://github.com/CSAILVision/places365
 
 
 ## Usage TensorBoard

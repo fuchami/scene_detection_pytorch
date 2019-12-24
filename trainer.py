@@ -14,12 +14,9 @@ def fit(train_loader, val_loader, model, loss_fn, optimizer, scheduler,
         train_loss, metrics = train_epoch(train_loader, model, loss_fn, 
                                             optimizer, cuda,
                                             log_interval, metrics)
-        # message = 'Epoch: {}/{}. Train set: Average loss: {:.4f}'.format(epoch+1, n_epochs, train_loss)
         message = f'Epoch: {epoch+1}/{n_epochs}. Train set: Average loss: {train_loss:.4f}'
         for metric in metrics:
-            # message += '\t{}: {}'.format(metric.name, metric.value())
             message += f'\t{metric.name}: {metric.value()}'
-
         
         # Test stage
         val_loss, metrics = test_epoch(val_loader, model, loss_fn, cuda, metrics)

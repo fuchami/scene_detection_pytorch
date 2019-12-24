@@ -36,11 +36,13 @@ class EmbeddingNet(nn.Module):
             print('nn_input:', nn_input)
 
         if self.merge == 'mcb':
-            input_size = 2048
-            output_size = 16000
+            a_t_input = 768
+            a_t_output = 2048
 
-            self.fc_audio = nn.Sequential(nn.Linear(2560, 2048), nn.ReLU())
-            self.mcb = CompactBilinearPooling(input_size,input_size, output_size).cuda()
+            self.fc_audio = nn.Sequential(nn.Linear(2560, 768), nn.BatchNorm1d(768), nn.ReLU())
+            self.mcb_at = CompactBilinearPooling(a_t_input,a_t_input, a_t_output).cuda()
+
+            self.mcb_it = CompactBilinearPooling(a_t_output,a_t_output, nn_input).cuda()
 
             nn_input = 16000
 
@@ -50,8 +52,8 @@ class EmbeddingNet(nn.Module):
                                 nn.Linear(128, 30))
 
         # with BatchNorm
-        self.fc_bn = nn.Sequential(nn.Linear(nn_input, 512), nn.BatchNorm1d(512), nn.PReLU(),
-                                nn.Linear(512, 256), nn.BatchNorm1d(256), nn.PReLU(),
+        self.fc_bn = nn.Sequential(nn.Linear(nn_input, 1024), nn.BatchNorm1d(1024), nn.PReLU(),
+                                nn.Linear(1024, 256), nn.BatchNorm1d(256), nn.PReLU(),
                                 nn.Linear(256, 128))
 
         # with dropout
@@ -76,11 +78,11 @@ class EmbeddingNet(nn.Module):
                 concat_list.append(txt_feature)
             if self.timestamp:
                 concat_list.append(x['timestamp'])
-            
-                output = torch.cat(concat_list, dim=1)
+            output = torch.cat(concat_list, dim=1)
         else:
             audio_feature = self.fc_audio(x['audio'])
-            output = self.mcb(x['image'], audio_feature)
+            at_output = self.mcb_at(x['text'], audio_feature)
+            output = self.mcb_it(at_output, x['image'])
 
         # print('output size' ,output.size()) # ([3, nn_input])
         output = self.fc_bn(output)
