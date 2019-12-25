@@ -182,21 +182,35 @@ class SiameseMulti(Dataset):
         return len(self.labels) if self.train else len(self.test_labels)
 
 class TripletMulti(Dataset):
+    def __init__(self, test_path='./BBC_Planet_Earth_Dataset/dataset/annotator_0/01_From_Pole_to_Pole.csv',
+                    train=True, image=False, timestamp=False, audio=False, text=False):
     """
     train: 各サンプル(アンカー)に対して、正と負のサンプルをランダムに選択する
     """
-
-    def __init__(self, csv_path=None, transform=None, train=True,
-                    image=False, timestamp=False, audio=False, text=False):
-
-        self.train_df       = pd.read_csv('./BBC_Planet_Earth_Dataset/dataset/annotator_0/01_From_Pole_to_Pole.csv')
         self.train          = train # これでtrain/testの切り替えを行う
-        self.transform      = transform
         self.image_load     = image
         self.timestamp_load = timestamp
         self.audio_load     = audio 
         self.text_load      = text 
+    
+    """ train data merge and load """
+    if self.train:
+        """ test以外のcsvファイルをすべてマージしてtrainとする """
+        train_csv_list = list(set(glob.glob(os.path.dirname(test_path)+'/*')) - set([test_path]))
 
+        self.train_df = None
+        for trian_csv in train_csv_list:
+            if self.train_df is None:
+                self.train_df = pd.read_csv(trian_csv)
+            else:
+                _df = pd.read_csv(trian_csv)
+                shot_id = self.train_df['shot_id'].max()+1
+                scene_id = self.train_df['scene_id'].max()+1
+                _df['shot_id'] = _df['shot_id'] + shot_id
+                _df['scene_id'] = _df['scene_id'] + scene_id
+                self.train_df = pd.concat([self.train_df, _df])
+
+        """ loading """
         self.index         = list(self.train_df.shot_id)
         self.labels     = list(self.train_df.scene_id)
         self.labels_set = set(self.train_df.scene_id.unique())
@@ -208,35 +222,27 @@ class TripletMulti(Dataset):
         self.end_sec   = list(self.train_df.end_sec)
         self.shot_sec  = list(self.train_df.shot_sec)
 
-        if self.image_load: self.images = list(self.train_df.image.unique())
-        if self.audio_load: self.audios = list(self.train_df.audio.unique())
+        if self.image_load: self.images = list(self.train_df.image_feature_path)
+        if self.audio_load: self.audios = list(self.train_df.audio_feature_path)
+        if self.text_load:  self.texts  = list(self.train_df.text_feature_path)
+    else:
+        self.test_df = pd.read(test_path)
+        self.test_labels = list(self.test_df.scene_id)
+        self.labels_set = set(self.test_df.scene_id.unique())
+        self.label_to_indices = {label: np.where(self.test_df.scene_id == label)[0]
+                                for label in self.labels_set}
+        print('self.labels_set:', self.labels_set)
+        print('self.labels_to_indices:', self.label_to_indices)
+        self.start_sec = list(self.train_df.start_sec)
+        self.end_sec   = list(self.train_df.end_sec)
+        self.shot_sec  = list(self.train_df.shot_sec)
 
-        print('============================')
-        print('--- Triplet MultimodalDataset ---')
-        print(self.train_df.head())
-        print('start_sec: ', len(self.start_sec))
-        print('end_sec: ', len(self.end_sec))
-        print('shot_sec', len(self.shot_sec))
-        print('labels', len(self.labels))
-        print('============================')
-    
-    def image_open(self, t):
-        image = Image.open(t)
-        # transformするならする
-        if self.transform is None:
-            return image
-        else:
-            return self.transform(image)
-        
-    def audio_open(self, t):
-        y, fs = librosa.load(t)
-        melsp = librosa.feature.melspectrogram(y=y, sr=fs)
+        if self.image_load: 
+            self.images = list(self.test_df.image_feature_path)
+            self.images_path = list(self.test_df.image)
+        if self.audio_load: self.audios = list(self.test_df.audio_feature_path)
+        if self.text_load:  self.texts  = list(self.test_df.text_feature_path)
 
-        # (1, 128, 431)のtensorへ
-        melsp = torch.unsqueeze(torch.tensor(melsp), 0)
-        # print(melsp.size())
-        return melsp
-    
     def __getitem__(self, index):
         if self.train:
             anchor_index = index
