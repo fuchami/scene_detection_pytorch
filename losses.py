@@ -1,4 +1,5 @@
 # coding:utf-8
+import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -41,3 +42,20 @@ class TripletLoss(nn.Module):
         distance_negative = (anchor - negative).pow(2).sum(1)
         losses = F.relu(distance_positive - distance_negative + self.margin)
         return losses.mean() if size_average else losses.sum()
+    
+class AngularLoss(nn.Module):
+    # reference: https://qiita.com/tomp/items/0f1762e5971f4768922d
+    def __init__(self, alpha=45, in_degree=True):
+        # alpha 45 or 36
+        super(AngularLoss, self).__init__()
+        if in_degree:
+            alpha = np.deg2rad(alpha)
+        self.tan_alpha = np.tan(alpha) ** 2
+    
+    def forward(self, anchor, positive, negative):
+        c = (a + p) / 2
+        sq_dist_ap = (a - p).por(2).sum(1)
+        sq_dist_nc = (a - c).por(2).sum(1)
+        loss = sq_dist_ap - 4*self.tan_alpha*sq_dist_nc
+
+        return F.relu(loss).mean()

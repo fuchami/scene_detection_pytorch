@@ -7,6 +7,28 @@ import torchvision.models as models
 from transformers import BertModel
 from compact_bilinear_pooling import CountSketch, CompactBilinearPooling
 
+class L2Norm(nn.Module):
+    def __init__(self, input_channels=512, scale=20):
+        super(L2Norm, self).__init__()
+        self.weight = nn.Parameter(torch.Tensor(input_channels))
+        self.scale = scale # 係数weightの初期値として設定する値
+        self.reset_parameters()
+        self.eps = 1e-10
+    
+    def reset_parameters(self):
+        """ 結合パラメータを大きさscaleの値にする初期化を実行 """
+        nn.init.constant_(self.weight, self.scale) # weightの値がすべてscaleになる
+    
+    def forward(self, x):
+        # norm tensor.size() ([batchsize, 1, 38, 38])
+        norm = x.pow(2).sum(dim=1, keepdim=True).sqrt()+self.eps
+        x = torch.div(x, norm)
+
+        weights = self.weight.unsqueeze(0).unsqueeze(2).unsqueeze(3).expand_as(x)
+        out = weights * x
+
+        return out
+
 class EmbeddingNet(nn.Module):
     def __init__(self, image=False, audio=False, text=False, time=False,
                 merge='concat'):
