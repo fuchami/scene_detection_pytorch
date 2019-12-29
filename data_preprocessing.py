@@ -4,8 +4,8 @@ BBC Planet Earth Dataset
 make Multimodal Labeling file
 
 [x] 画像: 各ショットのミドルフレーム
-[ ] テキスト: ショットの中心のフレームから20sec間のテキストを埋め込む
-[ ] 音声： ショットの中心のフレームから20sec間の音声を抽出
+[x] テキスト: ショットの中心のフレームから20sec間のテキストを埋め込む
+[ ] 音声： ショットの中心のフレームから10sec間の音声を抽出
 [x] timestamp: ショットの開始終了時間、ショットの長さ
 
 text1: ショットの中心フレームを中心にmax(Ws, 20sec)のコンテキストウィンドウを定義する
@@ -191,7 +191,7 @@ class MultimodalData(object):
 
             shot_id += 1
     
-    def dump_audio(self, shot_id, middle_ms, ms_width=10000):
+    def dump_audio(self, shot_id, middle_ms, ms_width=5000):
         audio_dir = f'./BBC_Planet_Earth_Dataset/audio/bbc_{self.episode}/'
         if not os.path.exists(audio_dir): os.makedirs(audio_dir)
         audio_path = f'{audio_dir}{shot_id}.wav'

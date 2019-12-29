@@ -3,11 +3,11 @@
 My research repository  
 
 # TODO List
-+ [ ]: eval テストデータで評価を行うコードを書く
-+ [ ]: place-365での特徴抽出
 + [ ]: TripletNetDatasetの実装
++ [ ]: place-365での特徴抽出
++ [ ]: 10sec Audioでの特徴抽出
++ [ ]: eval metricsの計算
 
-+ [ ]: LossのDistanceをCosineに
 + [ ]: 各シーンのフレーム一覧
 
 + [x]: trainデータをmergeするコード(dataloader内)
