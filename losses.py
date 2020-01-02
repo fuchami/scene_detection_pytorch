@@ -19,7 +19,7 @@ class ContrastiveLoss(nn.Module):
         self.margin = margin
         self.eps = 1e-9
     
-    def forward(self, output1, output2, target, size_average=True):
+    def forward(self, output1, output2, target, size_average=True, norm=True):
         distances = (output2 - output1).pow(2).sum(1) # squared distance
         losses = 0.5 * (target.float() * distances +
                         (1 + -1 * target).float() * 
@@ -37,11 +37,16 @@ class TripletLoss(nn.Module):
         super(TripletLoss, self).__init__()
         self.margin = margin
     
-    def forward(self, anchor, positive, negative, size_average=True):
+    def forward(self, anchor, positive, negative, size_average=True, norm=True):
         distance_positive = (anchor - positive).pow(2).sum(1)
         distance_negative = (anchor - negative).pow(2).sum(1)
         losses = F.relu(distance_positive - distance_negative + self.margin)
-        return losses.mean() if size_average else losses.sum()
+        loss_embedd = anchor.norm(2) + positive.norm(2) + negative.norm(2)
+
+        if size_average:
+            return losses.mean() + 0.001 * loss_embedd
+        else:
+            return losses.sum() + 0.001 * loss_embedd
     
 class AngularLoss(nn.Module):
     # reference: https://qiita.com/tomp/items/0f1762e5971f4768922d
@@ -53,9 +58,9 @@ class AngularLoss(nn.Module):
         self.tan_alpha = np.tan(alpha) ** 2
     
     def forward(self, anchor, positive, negative):
-        c = (a + p) / 2
-        sq_dist_ap = (a - p).por(2).sum(1)
-        sq_dist_nc = (a - c).por(2).sum(1)
+        c = (anchor + positive) / 2
+        sq_dist_ap = (anchor - positive).pow(2).sum(1)
+        sq_dist_nc = (anchor - c).pow(2).sum(1)
         loss = sq_dist_ap - 4*self.tan_alpha*sq_dist_nc
 
         return F.relu(loss).mean()
