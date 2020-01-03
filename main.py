@@ -28,8 +28,8 @@ def main(args):
 
     """ setting logs """
     now_time = datetime.now().strftime("%y%m%d_%H%M")
-    log_dir_name = f'./logs/{now_time}{args.model}_{args.image}_{args.audio}_{args.text}_{args.time}_'
-    log_dir_name += f'epoch{args.epochs}batch{args.batchsize}lr{args.learning_rate}extract_{args.img_model}_'
+    log_dir_name = f'./logs/{now_time}{args.model}_{args.image}-{args.weight}_{args.audio}_{args.text}_{args.time}_'
+    log_dir_name += f'epoch{args.epochs}batch{args.batchsize}lr{args.learning_rate}_'
     log_dir_name += f'{args.optimizer}_margin{args.margin}/'
     print('log_dir_name:', log_dir_name)
     
@@ -41,8 +41,10 @@ def main(args):
 
     """ load dataset """
     if args.model == 'siamese':
-        train_dataset = SiameseMulti(train=True, image=args.image, timestamp=args.time, audio=args.audio, text=args.text)
-        test_dataset = SiameseMulti(train=False, image=args.image, timestamp=args.time, audio=args.audio, text=args.text)
+        train_dataset = SiameseMulti(train=True, image=args.image, timestamp=args.time, audio=args.audio,
+                                    text=args.text, weight=args.weight)
+        test_dataset = SiameseMulti(train=False, image=args.image, timestamp=args.time, audio=args.audio,
+                                    text=args.text, weight=args.weight)
     elif args.model == 'triplet':
         pass # TODO:
 
@@ -88,7 +90,7 @@ def main(args):
         # referenceに乗っ取る
         optimizer = optim.SGD(model.parameters(), lr=0.001, momentum=0.9, weight_decay=0.0005, nesterov=True)
 
-    scheduler = lr_scheduler.StepLR(optimizer, 8, gamma=0.1, last_epoch=-1)
+    scheduler = lr_scheduler.StepLR(optimizer, step_size=30, gamma=0.5)
     n_epochs = args.epochs
     log_interval = args.log_interval
 
@@ -110,8 +112,9 @@ def main(args):
     print('== finished ==')
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description='')
-    parser.add_argument('--model', default='siamese')
+    parser = argparse.ArgumentParser(description='train SiameseNet or TripletNet')
+    parser.add_argument('--model', default='siamese',
+                        help='siamese or triplet or angular')
     parser.add_argument('--image',  '-i', default=True)
     parser.add_argument('--audio',  '-a', default=True)
     parser.add_argument('--text',  '-t', default=False)
@@ -119,12 +122,13 @@ if __name__ == "__main__":
 
     parser.add_argument('--epochs', '-e', default=100, type=int)
     parser.add_argument('--output_unit', default=128, type=int)
-    parser.add_argument('--batchsize', '-b', default=128, type=int)
-    parser.add_argument('--learning_rate', '-r', default=1e-2)
+    parser.add_argument('--batchsize', '-b', default=512, type=int)
+    parser.add_argument('--learning_rate', '-r', default=0.01)
     parser.add_argument('--log_interval', '-l', default=100, type=int)
     parser.add_argument('--optimizer', '-o' ,default='sgd')
-    parser.add_argument('--img_model', default='res')
-    parser.add_argument('--margin', '-m', default=0.5)
+    parser.add_argument('--weight', '-w', default='place', type=str,
+                        help='chose place or imagenet trained weight')
+    parser.add_argument('--margin', '-m', default=1.)
 
     args = parser.parse_args()
     main(args)
