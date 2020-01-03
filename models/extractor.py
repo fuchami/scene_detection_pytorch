@@ -1,4 +1,6 @@
 # coding:utf-8
+import os,sys
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -8,24 +10,32 @@ from transformers import BertModel, BertTokenizer
 from torchvggish import vggish, vggish_input
 
 class ImageExtractor(nn.Module):
-    def __init__(self, model='res'):
+    def __init__(self, model='res', weight='imagenet'):
         """
-        res: ResNet-152
-        vgg: VGG-16
+        pre-trained weight: iamgenet or place365
         """
         super(ImageExtractor, self).__init__()
-        if model=='res':
+        if model=='imagenet':
             """ load ResNet-152 """
             resnet = models.resnet152(pretrained=True)
             self.extractor = nn.Sequential(*list(resnet.children())[:-1])
-        if model=='vgg':
-            vgg = models.vgg16(pretrained=True)
-            self.extractor = nn.Sequential(*list(vgg.children())[:0])
-            # print(self.extractor)
+        elif model=='place365':
+            """ load ResNet-50 """
+            arch = 'resnet50'
+            model_file = '.models/resnet50_place365.pth.tar'
+            if not os.access(model_file, os.W_OK):
+                weight_url = 'https://places2.csail.mit.edu/models_places365' + model_file
+                os.system('wget ' + weight_url)
 
-        # only eval 
-        # self.extractor.eval()
-    
+            model = models.__dict__[arch](num_classes=365)
+            checkpoint = torch.load(model_file, map_location=lambda storage, loc: storage)
+            state_dict = {str.replace(k,'module.',''): v for k,v in checkpoint['state_dict'].items()}
+            model.load_state_dict(state_dict)
+            self.extractor = nn.Sequential(*list(resnet.children())[:-1])
+        else:
+            print('Error please select pre-trained weight: imagenet or place365')
+            sys.exit(1)
+
     def forward(self, x):
         with torch.no_grad():
             x = self.extractor(x)

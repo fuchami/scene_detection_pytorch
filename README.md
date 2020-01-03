@@ -3,10 +3,10 @@
 My research repository  
 
 # TODO List
-+ [ ]: TripletNetDatasetの実装
 + [ ]: place-365での特徴抽出
 + [ ]: 10sec Audioでの特徴抽出
 + [ ]: eval metricsの計算
++ [ ]: TripletNetDatasetの実装
 
 + [ ]: 各シーンのフレーム一覧
 

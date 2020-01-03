@@ -29,31 +29,43 @@ class ExtraFeature(object):
         self.csv_path = pd.read_csv(f'./BBC_Planet_Earth_Dataset/dataset/annotator_{annotator}/{movie_name}.csv')
         print(self.csv_path.head())
 
-
-        image_feature_dir = f'./BBC_Planet_Earth_Dataset/feature/image/'
+        imagenet_feature_dir = f'./BBC_Planet_Earth_Dataset/feature/imagenet/'
+        place365_feature_dir = f'./BBC_Planet_Earth_Dataset/feature/place365/'
         audio_feature_dir = f'./BBC_Planet_Earth_Dataset/feature/audio/'
         text_feature_dir = f'./BBC_Planet_Earth_Dataset/feature/text/'
-        if not os.path.exists(image_feature_dir): os.makedirs(image_feature_dir)
+        if not os.path.exists(imagenet_feature_dir): os.makedirs(imagenet_feature_dir)
+        if not os.path.exists(place365_feature_dir): os.makedirs(place365_feature_dir)
         if not os.path.exists(audio_feature_dir): os.makedirs(audio_feature_dir)
         if not os.path.exists(text_feature_dir): os.makedirs(text_feature_dir)
 
-        self.image_feature_path = []
-        self.audio_feature_path = []
-        self.text_feature_path =  []
+        self.imagenet_feature_path = []
+        self.place365_feature_path = []
+        self.audio_feature_path    = []
+        self.text_feature_path     = []
 
         """ image extra """
         normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
                                         std=[0.229, 0.224, 0.225])
-        self.transform = transforms.Compose([transforms.Resize(224),
+        self.transform = transforms.Compose([transforms.Resize((256, 256)),
+                                        transforms.CenterCrop(224),
                                         transforms.ToTensor(),
                                         normalize])
-        self.image_extractor = ImageExtractor('res')
-        self.image_extractor.eval()
-        if cuda: self.image_extractor.cuda()
+
+        self.imagenet_extractor = ImageExtractor(weight='imagenet')
+        self.imagenet_extractor.eval()
+        self.place_extractor = ImageExtractor(weight='place365')
+        self.place_extractor.eval()
+
+        if cuda:
+            self.imagenet_extractor.cuda()
+            self.place_extractor.cuda()
 
         self.image_extra()
-        if len(self.image_feature_path) > 1:
-            self.csv_path['image_feature_path'] = self.image_feature_path
+        if len(self.imagenet_feature_path) > 1:
+            self.csv_path['imagenet_feature_path'] = self.imagenet_feature_path
+        
+        if len(self.place365_feature_path) > 1:
+            self.csv_path['place365_feature_path'] = self.place365_feature_path
 
         """ audio extra """
         self.audio_extractor = vggish()
@@ -102,23 +114,40 @@ class ExtraFeature(object):
                 print('save text features as npy :', txt_feature_path)
             self.text_feature_path.append(txt_feature_path+'.npy')
     
-    def image_extra(self):
+    def image_extra(self, model, name):
         for row in self.csv_path.itertuples():
             print(row.image)
-            img_feature_path = row.image.replace('.jpg', '').replace('frame', 'feature/image')
-            img_feature_dir = os.path.dirname(img_feature_path)
-            if not os.path.exists(img_feature_dir): os.makedirs(img_feature_dir)
-            print(img_feature_path)
+            """ imagenet ResNet-152 """
+            imgnet_feature_path = row.image.replace('.jpg', '').replace('frame', 'feature/imagenet')
+            imgnet_feature_dir = os.path.dirname(imgnet_feature_path)
+            if not os.path.exists(imgnet_feature_dir): os.makedirs(imgnet_feature_dir)
+            print(imgnet_feature_path)
 
             # ファイルがなければ特徴抽出
-            if os.path.isfile(img_feature_path+'.npy'):
-                print('already exist image feature as npy: ', img_feature_path)
+            if os.path.isfile(imgnet_feature_path+'.npy'):
+                print('already exist image feature as npy: ', imgnet_feature_path)
             else: 
-                img_feature = self.image_extractor(self.image_open(row.image))
+                img_feature = self.imagenet_extractor(self.image_open(row.image))
                 img_feature = img_feature.cpu().detach().numpy()
-                np.save(img_feature_path, img_feature)
+                np.save(imgnet_feature_path, img_feature)
                 print('save image feature as npy:', img_feature)
-            self.image_feature_path.append(img_feature_path+'.npy')
+            self.imagenet_feature_path.append(imgnet_feature_path+'.npy')
+
+            """ place-365 ResNet-50 """
+            place_feature_path = row.image.replace('.jpg', '').replace('frame', 'feature/place')
+            place_feature_dir = os.path.dirname(place_feature_path)
+            if not os.path.exists(place_feature_dir): os.makedirs(place_feature_dir)
+            print(place_feature_path)
+
+            # ファイルがなければ特徴抽出
+            if os.path.isfile(place_feature_path+'.npy'):
+                print('already exist image feature as npy: ', place_feature_path)
+            else: 
+                plc_feature = self.place_extractor(self.image_open(row.image))
+                plc_feature = plc_feature.cpu().detach().numpy()
+                np.save(place_feature_path, plc_feature)
+                print('save image feature as npy:', plc_feature)
+            self.place_feature_path.append(place_feature_path+'.npy')
     
     def audio_extra(self):
         for row in self.csv_path.itertuples():

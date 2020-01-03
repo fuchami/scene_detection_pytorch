@@ -5,6 +5,7 @@ import torch
 from torch.autograd import Variable as V
 import torchvision.models as models
 from torchvision import transforms
+import torch.nn as nn
 from torch.nn import functional as F
 import os
 from PIL import Image
@@ -16,7 +17,6 @@ if not os.access(model_file, os.W_OK):
     weight_url = 'https://places2.csail.mit.edu/models_places365' + model_file
     os.system('wget ' + weight_url)
 
-
 # %%
 model = models.__dict__[arch](num_classes=365)
 checkpoint = torch.load(model_file, map_location=lambda storage, loc: storage)
@@ -25,4 +25,7 @@ model.load_state_dict(state_dict)
 print(model)
 model.eval()
 
+# %%
+resnet = nn.Sequential(*list(model.children())[:-1])
+print(resnet)
 # %%
