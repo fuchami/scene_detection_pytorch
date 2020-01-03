@@ -57,6 +57,7 @@ class SiameseMulti(Dataset):
             self.shot_sec  = list(scale(self.train_df.shot_sec))
 
             if self.image_load: 
+                self.images_path = list(self.train_df.image)
                 if weight == 'place':
                     self.images = list(self.train_df.place365_feature_path)
                 else:
@@ -109,7 +110,7 @@ class SiameseMulti(Dataset):
         if self.train:
             target = np.random.randint(0,2) # 0or1をランダムに選択
             label1 = self.labels[index]
-            img1_path = ""
+            img1_path = self.images_path[index]
 
             label_count = len(self.label_to_indices[label1])
 
@@ -231,6 +232,7 @@ class TripletMulti(Dataset):
             self.shot_sec  = list(scale(self.train_df.shot_sec))
 
             if self.image_load: 
+                self.images_path = list(self.train_df.image)
                 if weight == 'place':
                     self.images = list(self.train_df.place365_feature_path)
                 else:
@@ -280,7 +282,7 @@ class TripletMulti(Dataset):
             anchor_index = index
             anchor_label = self.labels[anchor_index]
             label_count = len(self.label_to_indices[anchor_label])
-            img1_path = self.images[index]
+            img1_path = self.images_path[index]
 
             # 2つ以上のショットのシーンが出るまでがんばる
             while label_count < 2:
@@ -293,21 +295,29 @@ class TripletMulti(Dataset):
                 positive_index = np.random.choice(self.label_to_indices[anchor_label])
             negative_label = np.random.choice(list(self.labels_set - set([anchor_label])))
             negative_index = np.random.choice(self.label_to_indices[negative_label])
-        
+
+            """ label check """
+            if self.labels[anchor_index] != self.labels[positive_index]:
+                raise ("ERROR!!! anchor and positive not same ")
+            if self.labels[anchor_index] == self.labels[negative_index]:
+                raise ("ERROR!!! anchor and negative same ")
+            if self.labels[positive_index] == self.labels[negative_index]:
+                raise ("ERROR!!! positive and negative same ")
         else:
             anchor_index = self.test_triplets[index][0]
             positive_index = self.test_triplets[index][1]
             negative_index = self.test_triplets[index][2]
-            print(f'index: {anchor_index}, {positive_index}, {negative_index}')
-            
-        """ label check """
-        if self.labels[anchor_index] != self.labels[positive_index]:
-            raise ("ERROR!!! anchor and positive not same ")
-        if self.labels[anchor_index] == self.labels[negative_index]:
-            raise ("ERROR!!! anchor and negative same ")
-        if self.labels[positive_index] == self.labels[negative_index]:
-            raise ("ERROR!!! positive and negative same ")
-        
+            anchor_label = self.test_labels[anchor_index]
+            img1_path = self.images_path[index]
+            # print(f'index: {anchor_index}, {positive_index}, {negative_index}')
+
+            """ label check """
+            if self.test_labels[anchor_index] != self.test_labels[positive_index]:
+                raise ("ERROR!!! anchor and positive not same ")
+            if self.test_labels[anchor_index] == self.test_labels[negative_index]:
+                raise ("ERROR!!! anchor and negative same ")
+            if self.test_labels[positive_index] == self.test_labels[negative_index]:
+                raise ("ERROR!!! positive and negative same ")
         # print(f'index: {anchor_index}, {positive_index}, {negative_index}')
 
         anchor = {}
