@@ -3,7 +3,7 @@ import numpy as np
 import pandas as pd
 import librosa, scipy
 import os, sys, glob, csv
-from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import scale
 from PIL import Image
 
 import torch
@@ -53,10 +53,9 @@ class SiameseMulti(Dataset):
             # print('self.label_set:', self.labels_set)
             # print('self.labels_to_indices:',  self.label_to_indices)
 
-            scaler = StandardScaler()
-            self.start_sec = list(scaler.fit_transform(self.train_df.start_sec))
-            self.end_sec   = list(scaler.fit_transform(self.train_df.end_sec))
-            self.shot_sec  = list(scaler.fit_transform(self.train_df.shot_sec))
+            self.start_sec = list(scale(self.train_df.start_sec))
+            self.end_sec   = list(scale(self.train_df.end_sec))
+            self.shot_sec  = list(scale(self.train_df.shot_sec))
 
             if self.image_load: 
                 if weight == 'place':
@@ -79,8 +78,11 @@ class SiameseMulti(Dataset):
             self.shot_sec  = list(self.test_df.shot_sec)
 
             if self.image_load:
-                self.images = list(self.test_df.image_feature_path)
                 self.images_path = list(self.test_df.image)
+                if weight == 'place':
+                    self.images = list(self.test_df.place365_feature_path)
+                else:
+                    self.images = list(self.test_df.imagenet_feature_path)
             if self.audio_load: self.audios = list(self.test_df.audio_feature_path)
             if self.text_load:  self.texts  = list(self.test_df.text_feature_path)
             
