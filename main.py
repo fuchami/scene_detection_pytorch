@@ -14,7 +14,7 @@ from torchvision import transforms
 from torch.utils.tensorboard import SummaryWriter
 
 from trainer import fit
-from losses import ContrastiveLoss,TripletLoss
+from losses import ContrastiveLoss,TripletLoss,AngularLoss
 from datasets import SiameseMulti,TripletMulti
 from models.networks import SiameseNet,TripletNet
 from models.embedding import EmbeddingNet
@@ -45,8 +45,11 @@ def main(args):
                                     text=args.text, weight=args.weight)
         test_dataset = SiameseMulti(train=False, image=args.image, timestamp=args.time, audio=args.audio,
                                     text=args.text, weight=args.weight)
-    elif args.model == 'triplet':
-        pass # TODO:
+    else: 
+        train_dataset = TripletMulti(train=True, image=args.image, timestamp=args.time, audio=args.audio,
+                                    text=args.text, weight=args.weight)
+        test_dataset = TripletMulti(train=False, image=args.image, timestamp=args.time, audio=args.audio,
+                                    text=args.text, weight=args.weight)
 
     kwards = {'num_workers':1, 'pin_memory': True} if cuda else {}
     
@@ -74,6 +77,9 @@ def main(args):
     elif args.model == 'triplet':
         model = TripletNet(image=args.image, audio=args.audio, text=args.text, time=args.time)
         loss_fn = TripletLoss(args.margin)
+    elif args.model == 'angular':
+        model = TripletNet(image=args.image, audio=args.audio, text=args.text, time=args.time)
+        loss_fn = AngularLoss()
 
     """ tensorboad add graph """
     data, _, labels, _ = next(iter(train_loader))
@@ -113,22 +119,22 @@ def main(args):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='train SiameseNet or TripletNet')
-    parser.add_argument('--model', default='siamese',
+    parser.add_argument('--model', default='triplet',
                         help='siamese or triplet or angular')
     parser.add_argument('--image',  '-i', default=True)
     parser.add_argument('--audio',  '-a', default=True)
-    parser.add_argument('--text',  '-t', default=False)
+    parser.add_argument('--text',  '-t', default=True)
     parser.add_argument('--time',  '-s', default=True)
 
     parser.add_argument('--epochs', '-e', default=100, type=int)
     parser.add_argument('--output_unit', default=128, type=int)
-    parser.add_argument('--batchsize', '-b', default=512, type=int)
+    parser.add_argument('--batchsize', '-b', default=16, type=int)
     parser.add_argument('--learning_rate', '-r', default=0.01)
     parser.add_argument('--log_interval', '-l', default=100, type=int)
     parser.add_argument('--optimizer', '-o' ,default='sgd')
     parser.add_argument('--weight', '-w', default='place', type=str,
                         help='chose place or imagenet trained weight')
-    parser.add_argument('--margin', '-m', default=1.)
+    parser.add_argument('--margin', '-m', default=0.2)
 
     args = parser.parse_args()
     main(args)

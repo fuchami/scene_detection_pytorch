@@ -43,10 +43,7 @@ class TripletLoss(nn.Module):
         losses = F.relu(distance_positive - distance_negative + self.margin)
         loss_embedd = anchor.norm(2) + positive.norm(2) + negative.norm(2)
 
-        if size_average:
-            return losses.mean() + 0.001 * loss_embedd
-        else:
-            return losses.sum() + 0.001 * loss_embedd
+        return losses.mean() + 0.001 * loss_embedd if norm else losses.mean()
     
 class AngularLoss(nn.Module):
     # reference: https://qiita.com/tomp/items/0f1762e5971f4768922d
@@ -57,10 +54,11 @@ class AngularLoss(nn.Module):
             alpha = np.deg2rad(alpha)
         self.tan_alpha = np.tan(alpha) ** 2
     
-    def forward(self, anchor, positive, negative):
+    def forward(self, anchor, positive, negative, norm=True):
         c = (anchor + positive) / 2
         sq_dist_ap = (anchor - positive).pow(2).sum(1)
         sq_dist_nc = (anchor - c).pow(2).sum(1)
         loss = sq_dist_ap - 4*self.tan_alpha*sq_dist_nc
+        loss_embedd = anchor.norm(2) + positive.norm(2) + negative.norm(2)
 
-        return F.relu(loss).mean()
+        return F.relu(loss).mean() + 0.001 * loss_embedd if norm else F.relu(loss).mean()

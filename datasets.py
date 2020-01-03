@@ -1,7 +1,6 @@
 # coding:utf-8
 import numpy as np
 import pandas as pd
-import librosa, scipy
 import os, sys, glob, csv
 from sklearn.preprocessing import scale
 from PIL import Image
@@ -73,9 +72,9 @@ class SiameseMulti(Dataset):
                                     for label in self.labels_set}
             # print('self.label_set:', self.labels_set)
             # print('self.label_to_indices:', self.label_to_indices)
-            self.start_sec = list(self.test_df.start_sec)
-            self.end_sec   = list(self.test_df.end_sec)
-            self.shot_sec  = list(self.test_df.shot_sec)
+            self.start_sec = list(scale(self.test_df.start_sec))
+            self.end_sec   = list(scale(self.test_df.end_sec))
+            self.shot_sec  = list(scale(self.test_df.shot_sec))
 
             if self.image_load:
                 self.images_path = list(self.test_df.image)
@@ -227,10 +226,9 @@ class TripletMulti(Dataset):
                                     for label in self.labels_set}
             # print('self.label_set:', self.labels_set)
             # print('self.labels_to_indices:',  self.label_to_indices)
-            scaler = StandardScaler()
-            self.start_sec = list(scaler.fit_transform(self.train_df.start_sec))
-            self.end_sec   = list(scaler.fit_transform(self.train_df.end_sec))
-            self.shot_sec  = list(scaler.fit_transform(self.train_df.shot_sec))
+            self.start_sec = list(scale(self.train_df.start_sec))
+            self.end_sec   = list(scale(self.train_df.end_sec))
+            self.shot_sec  = list(scale(self.train_df.shot_sec))
 
             if self.image_load: 
                 if weight == 'place':
@@ -240,36 +238,42 @@ class TripletMulti(Dataset):
             if self.audio_load: self.audios = list(self.train_df.audio_feature_path)
             if self.text_load:  self.texts  = list(self.train_df.text_feature_path)
         else: # setup test data
-            self.test_df = pd.read(test_path)
+            self.test_df = pd.read_csv(test_path)
             self.test_labels = list(self.test_df.scene_id)
             self.labels_set = set(self.test_df.scene_id.unique())
             self.label_to_indices = {label: np.where(self.test_df.scene_id == label)[0]
                                     for label in self.labels_set}
             print('self.labels_set:', self.labels_set)
             print('self.labels_to_indices:', self.label_to_indices)
-            self.start_sec = list(self.train_df.start_sec)
-            self.end_sec   = list(self.train_df.end_sec)
-            self.shot_sec  = list(self.train_df.shot_sec)
+            self.start_sec = list(scale(self.test_df.start_sec))
+            self.end_sec   = list(scale(self.test_df.end_sec))
+            self.shot_sec  = list(scale(self.test_df.shot_sec))
 
             if self.image_load: 
-                self.images = list(self.test_df.image_feature_path)
                 self.images_path = list(self.test_df.image)
+                if weight == 'place':
+                    self.images = list(self.test_df.place365_feature_path)
+                else:
+                    self.images = list(self.test_df.imagenet_feature_path)
             if self.audio_load: self.audios = list(self.test_df.audio_feature_path)
             if self.text_load:  self.texts  = list(self.test_df.text_feature_path)
 
             random_state = np.random.RandomState(77)
 
-            # 無限ループの可能性アリ
+            # !無限ループの可能性アリ
             triplets = [[i,
                         random_state.choice(self.label_to_indices[self.test_labels[i]]),
                         random_state.choice(self.label_to_indices[
-                                                random.choice(
+                                                np.random.choice(
                                                     list(self.labels_set - set([self.test_labels[i]]))
                                                 )
                                             ])
             ]
             for i in range(len(self.test_df))]
             self.test_triplets = triplets
+            print('==================================')
+            print(self.test_triplets)
+            print('==================================')
 
     def __getitem__(self, index):
         if self.train:
@@ -291,7 +295,10 @@ class TripletMulti(Dataset):
             negative_index = np.random.choice(self.label_to_indices[negative_label])
         
         else:
-            pass # TODO: テストデータ用の処理を書く
+            anchor_index = self.test_triplets[index][0]
+            positive_index = self.test_triplets[index][1]
+            negative_index = self.test_triplets[index][2]
+            print(f'index: {anchor_index}, {positive_index}, {negative_index}')
             
         """ label check """
         if self.labels[anchor_index] != self.labels[positive_index]:
@@ -300,6 +307,8 @@ class TripletMulti(Dataset):
             raise ("ERROR!!! anchor and negative same ")
         if self.labels[positive_index] == self.labels[negative_index]:
             raise ("ERROR!!! positive and negative same ")
+        
+        # print(f'index: {anchor_index}, {positive_index}, {negative_index}')
 
         anchor = {}
         positive = {}
@@ -325,9 +334,9 @@ class TripletMulti(Dataset):
         
         """ load text """
         if self.text_load:
-            txt_anc = self.text_load(anchor_index)
-            txt_pos = self.text_load(positive_index)
-            txt_neg = self.text_load(negative_index)
+            txt_anc = self.load_text(anchor_index)
+            txt_pos = self.load_text(positive_index)
+            txt_neg = self.load_text(negative_index)
             anchor['text'] = txt_anc
             positive['text'] = txt_pos
             negative['text'] = txt_neg
@@ -353,7 +362,7 @@ class TripletMulti(Dataset):
     def load_audio(self, index):
         aud = np.load(self.audios[index])
         aud = torch.from_numpy(aud)
-        aud = torch.squeeze(adr.view(aud.size()[0], -1), dim=0)
+        aud = torch.squeeze(aud.view(aud.size()[0], -1), dim=0)
         return aud
 
     def load_text(self, index):

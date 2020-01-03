@@ -22,7 +22,7 @@ def fit(train_loader, val_loader, model, loss_fn, optimizer, scheduler,
         val_loss, metrics = test_epoch(val_loader, model, loss_fn, cuda, metrics)
         val_loss /= len(val_loader)
 
-        message += f'\nEpoch: {epoch+1}/{n_epochs} Validation set: Average loss{val_loss:.4}'
+        message += f'\nEpoch: {epoch+1}/{n_epochs} Validation set: Average loss: {val_loss:.4}'
         for metric in metrics:
             message += f'\t{metric.name()}: {metric.value()}'
 

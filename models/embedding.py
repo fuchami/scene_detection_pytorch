@@ -47,7 +47,7 @@ class EmbeddingNet(nn.Module):
                 nn_input += 2048
             if audio:
                 self.audio_feature = True 
-                nn_input += 2560
+                nn_input += 1280
             if text:
                 self.text_feature = True
                 nn_input += 768
@@ -61,29 +61,27 @@ class EmbeddingNet(nn.Module):
             a_t_input = 768
             a_t_output = 2048
 
-            self.fc_audio = nn.Sequential(nn.Linear(2560, 768), nn.BatchNorm1d(768), nn.ReLU())
+            self.fc_audio = nn.Sequential(nn.Linear(1280, 768), nn.BatchNorm1d(768), nn.ReLU())
             self.mcb_at = CompactBilinearPooling(a_t_input,a_t_input, a_t_output).cuda()
 
             self.mcb_it = CompactBilinearPooling(a_t_output,a_t_output, nn_input).cuda()
 
-            nn_input = 16000
+            nn_input = 2048 #16000
 
         # normal
-        self.fc = nn.Sequential(nn.Linear(nn_input, 512), nn.PReLU(),
-                                nn.Linear(512, 128), nn.PReLU(),
-                                nn.Linear(128, 30))
-
+        self.fc = nn.Sequential(nn.Linear(nn_input, 1024), nn.PReLU(),
+                                nn.Linear(1024, 512), nn.PReLU(),
+                                nn.Linear(512, 128))
         # with BatchNorm
         self.fc_bn = nn.Sequential(nn.Linear(nn_input, 1024), nn.BatchNorm1d(1024), nn.PReLU(),
-                                nn.Linear(1024, 256), nn.BatchNorm1d(256), nn.PReLU(),
-                                nn.Linear(256, 128))
-
+                                nn.Linear(1024, 512), nn.BatchNorm1d(512), nn.PReLU(),
+                                nn.Linear(512, 128))
         # with dropout
-        self.fc_do = nn.Sequential(nn.Linear(nn_input, 512), nn.PReLU(),
+        self.fc_do = nn.Sequential(nn.Linear(nn_input, 1024), nn.PReLU(),
                                 nn.Dropout(0.5),
-                                nn.Linear(512, 256), nn.PReLU(),
+                                nn.Linear(1024, 512), nn.PReLU(),
                                 nn.Dropout(0.5),
-                                nn.Linear(256, 128))
+                                nn.Linear(512, 128))
     
     def forward(self, x):
         if self.merge == 'concat':
