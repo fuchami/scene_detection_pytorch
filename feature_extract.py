@@ -114,7 +114,7 @@ class ExtraFeature(object):
                 print('save text features as npy :', txt_feature_path)
             self.text_feature_path.append(txt_feature_path+'.npy')
     
-    def image_extra(self, model, name):
+    def image_extra(self):
         for row in self.csv_path.itertuples():
             print(row.image)
             """ imagenet ResNet-152 """
@@ -144,10 +144,11 @@ class ExtraFeature(object):
                 print('already exist image feature as npy: ', place_feature_path)
             else: 
                 plc_feature = self.place_extractor(self.image_open(row.image))
+                print(plc_feature.size())
                 plc_feature = plc_feature.cpu().detach().numpy()
                 np.save(place_feature_path, plc_feature)
                 print('save image feature as npy:', plc_feature)
-            self.place_feature_path.append(place_feature_path+'.npy')
+            self.place365_feature_path.append(place_feature_path+'.npy')
     
     def audio_extra(self):
         for row in self.csv_path.itertuples():

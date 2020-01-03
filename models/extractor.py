@@ -15,14 +15,14 @@ class ImageExtractor(nn.Module):
         pre-trained weight: iamgenet or place365
         """
         super(ImageExtractor, self).__init__()
-        if model=='imagenet':
+        if weight=='imagenet':
             """ load ResNet-152 """
             resnet = models.resnet152(pretrained=True)
             self.extractor = nn.Sequential(*list(resnet.children())[:-1])
-        elif model=='place365':
+        elif weight=='place365':
             """ load ResNet-50 """
             arch = 'resnet50'
-            model_file = '.models/resnet50_place365.pth.tar'
+            model_file = './models/resnet50_places365.pth.tar'
             if not os.access(model_file, os.W_OK):
                 weight_url = 'https://places2.csail.mit.edu/models_places365' + model_file
                 os.system('wget ' + weight_url)
@@ -31,7 +31,7 @@ class ImageExtractor(nn.Module):
             checkpoint = torch.load(model_file, map_location=lambda storage, loc: storage)
             state_dict = {str.replace(k,'module.',''): v for k,v in checkpoint['state_dict'].items()}
             model.load_state_dict(state_dict)
-            self.extractor = nn.Sequential(*list(resnet.children())[:-1])
+            self.extractor = nn.Sequential(*list(model.children())[:-1])
         else:
             print('Error please select pre-trained weight: imagenet or place365')
             sys.exit(1)
