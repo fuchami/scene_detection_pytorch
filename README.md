@@ -3,13 +3,13 @@
 My research repository  
 
 # TODO List
-+ [ ]: place-365での特徴抽出
-+ [ ]: 10sec Audioでの特徴抽出
 + [ ]: eval metricsの計算
-+ [ ]: TripletNetDatasetの実装
 
 + [ ]: 各シーンのフレーム一覧
 
++ [x]: place-365での特徴抽出
++ [x]: 10sec Audioでの特徴抽出
++ [x]: TripletNetDatasetの実装
 + [x]: trainデータをmergeするコード(dataloader内)
 + [x]: textの前処理
 + [x]: tensorboard Embedding
@@ -20,7 +20,6 @@ My research repository  
 + [x]: Compact Bilinear Poolingの実装
 
 # Memo...
-- LerarningRateスケジュール
 - LossのL2項
 - distanceのl2 distance
 - Online TripletNetworks

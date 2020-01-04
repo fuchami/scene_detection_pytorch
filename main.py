@@ -28,8 +28,8 @@ def main(args):
 
     """ setting logs """
     now_time = datetime.now().strftime("%y%m%d_%H%M")
-    log_dir_name = f'./logs/{now_time}{args.model}_{args.image}-{args.weight}_{args.audio}_{args.text}_{args.time}_'
-    log_dir_name += f'epoch{args.epochs}batch{args.batchsize}lr{args.learning_rate}_'
+    log_dir_name = f'./logs/{now_time}{args.model}_{args.merge}_{args.image}-{args.weight}_{args.audio}_{args.text}_{args.time}_'
+    log_dir_name += f'epoch{args.epochs}batch{args.batchsize}lr{args.learning_rate}_norm{args.normalize}'
     log_dir_name += f'{args.optimizer}_margin{args.margin}/'
     print('log_dir_name:', log_dir_name)
     
