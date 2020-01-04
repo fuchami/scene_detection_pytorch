@@ -56,17 +56,14 @@ class EmbeddingNet(nn.Module):
                 nn_input += 3
 
             print('nn_input:', nn_input)
-
-        if self.merge == 'mcb':
+        else:
             a_t_input = 768
             a_t_output = 2048
+            nn_input = 16000
 
             self.fc_audio = nn.Sequential(nn.Linear(1280, 768), nn.BatchNorm1d(768), nn.ReLU())
-            self.mcb_at = CompactBilinearPooling(a_t_input,a_t_input, a_t_output).cuda()
-
-            self.mcb_it = CompactBilinearPooling(a_t_output,a_t_output, nn_input).cuda()
-
-            nn_input = 2048 #16000
+            self.mcb_at = CompactBilinearPooling(a_t_input,a_t_input, a_t_output)
+            self.mcb_it = CompactBilinearPooling(a_t_output,a_t_output, nn_input)
 
         # normal
         self.fc = nn.Sequential(nn.Linear(nn_input, 1024), nn.PReLU(),

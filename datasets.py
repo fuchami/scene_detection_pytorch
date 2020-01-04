@@ -12,7 +12,8 @@ from torchvision import transforms
 
 class SiameseMulti(Dataset):
     def __init__(self, test_path='./BBC_Planet_Earth_Dataset/dataset/annotator_0/01_From_Pole_to_Pole.csv',
-                    train=True, image=False, timestamp=False, audio=False, text=False, weight='place'):
+                    train=True, image=False, timestamp=False, audio=False, text=False,
+                    weight='place', normalize=True):
         """
         1. Image: ImageNet or Place-365 (weight)
         2. Audio: VGGish 
@@ -52,9 +53,14 @@ class SiameseMulti(Dataset):
             # print('self.label_set:', self.labels_set)
             # print('self.labels_to_indices:',  self.label_to_indices)
 
-            self.start_sec = list(scale(self.train_df.start_sec))
-            self.end_sec   = list(scale(self.train_df.end_sec))
-            self.shot_sec  = list(scale(self.train_df.shot_sec))
+            if normalize:
+                self.start_sec = list(scale(self.train_df.start_sec))
+                self.end_sec   = list(scale(self.train_df.end_sec))
+                self.shot_sec  = list(scale(self.train_df.shot_sec))
+            else:
+                self.start_sec = list(self.train_df.start_sec)
+                self.end_sec   = list(self.train_df.end_sec)
+                self.shot_sec  = list(self.train_df.shot_sec)
 
             if self.image_load: 
                 self.images_path = list(self.train_df.image)
@@ -73,9 +79,14 @@ class SiameseMulti(Dataset):
                                     for label in self.labels_set}
             # print('self.label_set:', self.labels_set)
             # print('self.label_to_indices:', self.label_to_indices)
-            self.start_sec = list(scale(self.test_df.start_sec))
-            self.end_sec   = list(scale(self.test_df.end_sec))
-            self.shot_sec  = list(scale(self.test_df.shot_sec))
+            if normalize:
+                self.start_sec = list(scale(self.test_df.start_sec))
+                self.end_sec   = list(scale(self.test_df.end_sec))
+                self.shot_sec  = list(scale(self.test_df.shot_sec))
+            else:
+                self.start_sec = list(self.test_df.start_sec)
+                self.end_sec   = list(self.test_df.end_sec)
+                self.shot_sec  = list(self.test_df.shot_sec)
 
             if self.image_load:
                 self.images_path = list(self.test_df.image)
@@ -192,7 +203,8 @@ class SiameseMulti(Dataset):
 
 class TripletMulti(Dataset):
     def __init__(self, test_path='./BBC_Planet_Earth_Dataset/dataset/annotator_0/01_From_Pole_to_Pole.csv',
-                    train=True, image=False, timestamp=False, audio=False, text=False, weight='place'):
+                    train=True, image=False, timestamp=False, audio=False, text=False, 
+                    weight='place', normalize=True):
         """
         train: 各サンプル(アンカー)に対して、正と負のサンプルをランダムに選択する
         """
@@ -227,9 +239,14 @@ class TripletMulti(Dataset):
                                     for label in self.labels_set}
             # print('self.label_set:', self.labels_set)
             # print('self.labels_to_indices:',  self.label_to_indices)
-            self.start_sec = list(scale(self.train_df.start_sec))
-            self.end_sec   = list(scale(self.train_df.end_sec))
-            self.shot_sec  = list(scale(self.train_df.shot_sec))
+            if normalize:
+                self.start_sec = list(scale(self.train_df.start_sec))
+                self.end_sec   = list(scale(self.train_df.end_sec))
+                self.shot_sec  = list(scale(self.train_df.shot_sec))
+            else:
+                self.start_sec = list(self.train_df.start_sec)
+                self.end_sec   = list(self.train_df.end_sec)
+                self.shot_sec  = list(self.train_df.shot_sec)
 
             if self.image_load: 
                 self.images_path = list(self.train_df.image)
@@ -247,9 +264,14 @@ class TripletMulti(Dataset):
                                     for label in self.labels_set}
             print('self.labels_set:', self.labels_set)
             print('self.labels_to_indices:', self.label_to_indices)
-            self.start_sec = list(scale(self.test_df.start_sec))
-            self.end_sec   = list(scale(self.test_df.end_sec))
-            self.shot_sec  = list(scale(self.test_df.shot_sec))
+            if normalize:
+                self.start_sec = list(scale(self.test_df.start_sec))
+                self.end_sec   = list(scale(self.test_df.end_sec))
+                self.shot_sec  = list(scale(self.test_df.shot_sec))
+            else:
+                self.start_sec = list(self.test_df.start_sec)
+                self.end_sec   = list(self.test_df.end_sec)
+                self.shot_sec  = list(self.test_df.shot_sec)
 
             if self.image_load: 
                 self.images_path = list(self.test_df.image)

@@ -9,9 +9,9 @@ from models.embedding import EmbeddingNet
 # from torchsummary import summary
 
 class SiameseNet(nn.Module):
-    def __init__(self, image=False, audio=False, text=False, time=False):
+    def __init__(self, image=False, audio=False, text=False, time=False, merge='concat'):
         super(SiameseNet, self).__init__()
-        self.embedding_net = EmbeddingNet(image,audio,text,time)
+        self.embedding_net = EmbeddingNet(image,audio,text,time,merge)
     
     def forward(self, x1, x2):
         output1 = self.embedding_net(x1)
@@ -23,9 +23,9 @@ class SiameseNet(nn.Module):
         return self.embedding_net(x)
 
 class TripletNet(nn.Module):
-    def __init__(self, image=False, audio=False, text=False, time=False):
+    def __init__(self, image=False, audio=False, text=False, time=False, merge='concat'):
         super(TripletNet, self).__init__()
-        self.embedding_net = EmbeddingNet(image,audio,text,time)
+        self.embedding_net = EmbeddingNet(image,audio,text,time,merge)
     
     def forward(self, x1, x2, x3):
         output1 = self.embedding_net(x1)

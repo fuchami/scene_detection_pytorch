@@ -42,14 +42,14 @@ def main(args):
     """ load dataset """
     if args.model == 'siamese':
         train_dataset = SiameseMulti(train=True, image=args.image, timestamp=args.time, audio=args.audio,
-                                    text=args.text, weight=args.weight)
+                                    text=args.text, weight=args.weight, normalize=args.normalize)
         test_dataset = SiameseMulti(train=False, image=args.image, timestamp=args.time, audio=args.audio,
-                                    text=args.text, weight=args.weight)
+                                    text=args.text, weight=args.weight, normalize=args.normalize)
     else: 
         train_dataset = TripletMulti(train=True, image=args.image, timestamp=args.time, audio=args.audio,
-                                    text=args.text, weight=args.weight)
+                                    text=args.text, weight=args.weight, normalize=args.normalize)
         test_dataset = TripletMulti(train=False, image=args.image, timestamp=args.time, audio=args.audio,
-                                    text=args.text, weight=args.weight)
+                                    text=args.text, weight=args.weight, normalize=args.normalize)
 
     kwards = {'num_workers':1, 'pin_memory': True} if cuda else {}
     
@@ -72,13 +72,16 @@ def main(args):
 
     """ build model """
     if args.model == 'siamese':
-        model = SiameseNet(image=args.image, audio=args.audio, text=args.text, time=args.time)
+        model = SiameseNet(image=args.image, audio=args.audio, text=args.text, time=args.time,
+                            merge=args.merge)
         loss_fn = ContrastiveLoss(args.margin)
     elif args.model == 'triplet':
-        model = TripletNet(image=args.image, audio=args.audio, text=args.text, time=args.time)
+        model = TripletNet(image=args.image, audio=args.audio, text=args.text, time=args.time,
+                            merge=args.merge)
         loss_fn = TripletLoss(args.margin)
     elif args.model == 'angular':
-        model = TripletNet(image=args.image, audio=args.audio, text=args.text, time=args.time)
+        model = TripletNet(image=args.image, audio=args.audio, text=args.text, time=args.time,
+                            merge=args.merge)
         loss_fn = AngularLoss()
 
     """ tensorboad add graph """
@@ -126,6 +129,11 @@ if __name__ == "__main__":
     parser.add_argument('--text',  '-t', default=True)
     parser.add_argument('--time',  '-s', default=True)
 
+    parser.add_argument('--margin', '-m', default=0.2)
+    parser.add_argument('--normalize', '-n', default=False)
+    parser.add_argument('--merge', default='mcb', type=str,
+                        help='chose vector merge concat or mcb')
+
     parser.add_argument('--epochs', '-e', default=100, type=int)
     parser.add_argument('--output_unit', default=128, type=int)
     parser.add_argument('--batchsize', '-b', default=16, type=int)
@@ -134,7 +142,6 @@ if __name__ == "__main__":
     parser.add_argument('--optimizer', '-o' ,default='sgd')
     parser.add_argument('--weight', '-w', default='place', type=str,
                         help='chose place or imagenet trained weight')
-    parser.add_argument('--margin', '-m', default=0.2)
 
     args = parser.parse_args()
     main(args)
