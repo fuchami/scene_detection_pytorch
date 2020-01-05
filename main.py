@@ -130,13 +130,14 @@ if __name__ == "__main__":
     parser.add_argument('--time',  '-s', default=True)
 
     parser.add_argument('--margin', '-m', default=0.2)
+    # parser.add_argument('--alpha', '-a', type=int, default=)
     parser.add_argument('--normalize', '-n', default=False)
     parser.add_argument('--merge', default='mcb', type=str,
                         help='chose vector merge concat or mcb')
 
-    parser.add_argument('--epochs', '-e', default=100, type=int)
-    parser.add_argument('--output_unit', default=128, type=int)
-    parser.add_argument('--batchsize', '-b', default=16, type=int)
+    parser.add_argument('--epochs', '-e', default=300, type=int)
+    # parser.add_argument('--output_unit', default=128, type=int)
+    parser.add_argument('--batchsize', '-b', default=512, type=int)
     parser.add_argument('--learning_rate', '-r', default=0.01)
     parser.add_argument('--log_interval', '-l', default=100, type=int)
     parser.add_argument('--optimizer', '-o' ,default='sgd')
