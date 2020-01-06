@@ -84,7 +84,7 @@ def train_epoch(train_loader, model, loss_fn, optimizer, cuda,
             for metric in metrics:
                 message +=  '\t{}: {}'.format(metric.name(), metric.value())
             
-            print(message)
+            # print(message)
             losses = []
 
     total_loss /= (batch_idx +1)

@@ -48,7 +48,6 @@ class TripletLoss(nn.Module):
 class AngularLoss(nn.Module):
     # reference: https://qiita.com/tomp/items/0f1762e5971f4768922d
     def __init__(self, alpha=45, in_degree=True):
-        # alpha 45 or 36
         super(AngularLoss, self).__init__()
         if in_degree:
             alpha = np.deg2rad(alpha)

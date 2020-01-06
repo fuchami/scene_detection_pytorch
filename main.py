@@ -29,8 +29,11 @@ def main(args):
     """ setting logs """
     now_time = datetime.now().strftime("%y%m%d_%H%M")
     log_dir_name = f'./logs/{now_time}{args.model}_{args.merge}_{args.image}-{args.weight}_{args.audio}_{args.text}_{args.time}_'
-    log_dir_name += f'epoch{args.epochs}batch{args.batchsize}lr{args.learning_rate}_norm{args.normalize}'
-    log_dir_name += f'{args.optimizer}_margin{args.margin}/'
+    log_dir_name += f'epoch{args.epochs}batch{args.batchsize}lr{args.learning_rate}_norm_{args.normalize}_{args.optimizer}'
+    if args.model == 'angular':
+        log_dir_name += f'_alpha{args.alpha}/'
+    else:
+        log_dir_name += f'_margin{args.margin}/'
     print('log_dir_name:', log_dir_name)
     
     if not os.path.exists(log_dir_name): os.makedirs(log_dir_name)
@@ -59,7 +62,7 @@ def main(args):
                                             **kwards)
     test_loader = torch.utils.data.DataLoader(test_dataset,
                                             batch_size=args.batchsize,
-                                            shuffle=False,
+                                            shuffle=True,
                                             **kwards)
 
     tb_loader = torch.utils.data.DataLoader(test_dataset,
@@ -129,14 +132,14 @@ if __name__ == "__main__":
     parser.add_argument('--text',  '-t', default=True)
     parser.add_argument('--time',  '-s', default=True)
 
-    parser.add_argument('--margin', '-m', default=0.2)
-    # parser.add_argument('--alpha', '-a', type=int, default=)
+    parser.add_argument('--margin', '-m', default=0.2, type=float)
+    parser.add_argument('--alpha', '-a', type=int, default=36,
+                        help='angular loss alpha 36 or 45')
     parser.add_argument('--normalize', '-n', default=False)
     parser.add_argument('--merge', default='mcb', type=str,
                         help='chose vector merge concat or mcb')
 
-    parser.add_argument('--epochs', '-e', default=300, type=int)
-    # parser.add_argument('--output_unit', default=128, type=int)
+    parser.add_argument('--epochs', '-e', default=100, type=int)
     parser.add_argument('--batchsize', '-b', default=512, type=int)
     parser.add_argument('--learning_rate', '-r', default=0.01)
     parser.add_argument('--log_interval', '-l', default=100, type=int)
