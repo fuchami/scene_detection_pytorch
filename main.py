@@ -127,25 +127,23 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='train SiameseNet or TripletNet')
     parser.add_argument('--model', default='triplet',
                         help='siamese or triplet or angular')
-    parser.add_argument('--image',  '-i', default=True)
-    parser.add_argument('--audio',  '-a', default=True)
-    parser.add_argument('--text',  '-t', default=True)
-    parser.add_argument('--time',  '-s', default=True)
+    parser.add_argument('--image',  '-i', default=True, type=bool)
+    parser.add_argument('--audio',  '-a', default=True, type=bool)
+    parser.add_argument('--text',  '-t', default=True, type=bool)
+    parser.add_argument('--time',  '-s', default=True, type=bool)
 
-    parser.add_argument('--margin', '-m', default=0.2, type=float)
-    parser.add_argument('--alpha', '-a', type=int, default=36,
-                        help='angular loss alpha 36 or 45')
-    parser.add_argument('--normalize', '-n', default=False)
-    parser.add_argument('--merge', default='mcb', type=str,
-                        help='chose vector merge concat or mcb')
+    parser.add_argument('--normalize', default=False, type=bool)
+    parser.add_argument('--margin', default=0.2, type=float)
+    parser.add_argument('--alpha', type=int, default=36, help='angular loss alpha 36 or 45')
+    parser.add_argument('--merge', default='mcb', type=str, help='chose vector merge concat or mcb')
+
+    parser.add_argument('--weight', default='place', type=str, help='chose place or imagenet trained weight')
 
     parser.add_argument('--epochs', '-e', default=100, type=int)
     parser.add_argument('--batchsize', '-b', default=512, type=int)
     parser.add_argument('--learning_rate', '-r', default=0.01)
     parser.add_argument('--log_interval', '-l', default=100, type=int)
     parser.add_argument('--optimizer', '-o' ,default='sgd')
-    parser.add_argument('--weight', '-w', default='place', type=str,
-                        help='chose place or imagenet trained weight')
 
     args = parser.parse_args()
     main(args)
