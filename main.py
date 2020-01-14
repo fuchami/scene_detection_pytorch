@@ -14,6 +14,7 @@ from torchvision import transforms
 from torch.utils.tensorboard import SummaryWriter
 
 from trainer import fit
+from eval import PredData, predict, calc_eval
 from losses import ContrastiveLoss,TripletLoss,AngularLoss
 from datasets import SiameseMulti,TripletMulti
 from models.networks import SiameseNet,TripletNet
@@ -73,6 +74,9 @@ def main(args):
     print('train_dataset length', len(train_dataset))
     print('test_dataset length', len(test_dataset))
 
+    pred_dataset = PredData(train=False, image=args.image, timestamp=args.time, audio=args.audio,
+                                text=args.text, weight=args.weight, normalize=args.normalize)
+
     """ build model """
     if args.model == 'siamese':
         model = SiameseNet(image=args.image, audio=args.audio, text=args.text, time=args.time,
@@ -118,6 +122,11 @@ def main(args):
     writer.add_embedding(features, metadata=labels, label_img=label_imgs)
 
     """ eval """
+    print('== eval ==')
+    pred_df = predict(pred_dataset, model, cuda, kwards)
+    calc_eval(pred_df)
+
+
     torch.save(model.state_dict(), log_dir_name+'weight.pth')
     writer.close()
 
@@ -132,15 +141,15 @@ if __name__ == "__main__":
     parser.add_argument('--text',  '-t', default=True, type=bool)
     parser.add_argument('--time',  '-s', default=True, type=bool)
 
-    parser.add_argument('--normalize', default=False, type=bool)
-    parser.add_argument('--margin', default=0.2, type=float)
-    parser.add_argument('--alpha', type=int, default=36, help='angular loss alpha 36 or 45')
-    parser.add_argument('--merge', default='mcb', type=str, help='chose vector merge concat or mcb')
+    parser.add_argument('--normalize', default=True, type=bool)
+    parser.add_argument('--margin', default=0.1, type=float)
+    parser.add_argument('--alpha', type=int, default=45, help='angular loss alpha 36 or 45')
+    parser.add_argument('--merge', default='concat', type=str, help='chose vector merge concat or mcb')
 
     parser.add_argument('--weight', default='place', type=str, help='chose place or imagenet trained weight')
 
     parser.add_argument('--epochs', '-e', default=100, type=int)
-    parser.add_argument('--batchsize', '-b', default=512, type=int)
+    parser.add_argument('--batchsize', '-b', default=128, type=int)
     parser.add_argument('--learning_rate', '-r', default=0.01)
     parser.add_argument('--log_interval', '-l', default=100, type=int)
     parser.add_argument('--optimizer', '-o' ,default='sgd')

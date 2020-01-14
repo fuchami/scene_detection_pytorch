@@ -2,6 +2,8 @@
 
 My research repository  
 
+alpha=36のほうが良いっぽい
+
 # TODO List
 + [ ]: eval metricsの計算
 
@@ -48,6 +50,8 @@ https://github.com/harritaylor/torchvggish
 
 ・Places-365 pre-trained models
 https://github.com/CSAILVision/places365
+
+https://zhuanlan.zhihu.com/p/85438252
 
 
 ## Usage TensorBoard

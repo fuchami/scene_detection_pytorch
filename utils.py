@@ -10,7 +10,7 @@ from sklearn.manifold import TSNE
 chars = "^<>vo+d"
 markers = [chars[i%7] for i in range(100)]
 
-feature_size = 128
+feature_size = 32
 
 def plot_embeddings(embeddings, targets, save_path, xlim=None, ylim=None):
     plt.figure(figsize=(20,20))
@@ -26,6 +26,7 @@ def plot_embeddings(embeddings, targets, save_path, xlim=None, ylim=None):
     plt.savefig(save_path +'embedding.png')
 
 def tb_embeddings(dataloader,dataset, model, cuda):
+    print('=== tensorboard embedding ===')
 
     tb_transform = torchvision.transforms.Compose([
         torchvision.transforms.Resize((50, 50)),
@@ -58,6 +59,7 @@ def tb_embeddings(dataloader,dataset, model, cuda):
     return features, labels, label_imgs
 
 def extract_embeddings(dataloader, model, cuda):
+    print('== extract_embeddings ==')
     with torch.no_grad():
         model.eval()
         embeddings = np.zeros((len(dataloader.dataset), feature_size))
@@ -73,6 +75,7 @@ def extract_embeddings(dataloader, model, cuda):
 
             embeddings[k:k+len(data[0][i])] = model.get_embedding(data[0]).data.cpu().numpy()
             labels[k:k+len(data[0][i])] = label.numpy()
+            print('labels', labels)
             k += len(data[0][i])
 
     # feature embedding using t-SNE

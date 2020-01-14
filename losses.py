@@ -4,7 +4,6 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-
 class ContrastiveLoss(nn.Module):
     """
     Contrastive loss
@@ -56,7 +55,7 @@ class AngularLoss(nn.Module):
     def forward(self, anchor, positive, negative, norm=True):
         c = (anchor + positive) / 2
         sq_dist_ap = (anchor - positive).pow(2).sum(1)
-        sq_dist_nc = (anchor - c).pow(2).sum(1)
+        sq_dist_nc = (negative - c).pow(2).sum(1)
         loss = sq_dist_ap - 4*self.tan_alpha*sq_dist_nc
         loss_embedd = anchor.norm(2) + positive.norm(2) + negative.norm(2)
 
