@@ -121,11 +121,13 @@ def main(args):
     features, labels, label_imgs= tb_embeddings(tb_loader, test_dataset, model, cuda)
     writer.add_embedding(features, metadata=labels, label_img=label_imgs)
 
-    """ eval """
     print('== eval ==')
     pred_df = predict(pred_dataset, model, cuda, kwards)
-    calc_eval(pred_df)
+    pred_df.to_csv(log_dir_name+'pred.csv', index=False)
+    IoU = calc_eval(pred_df)
 
+    with open('result_IoU.csv', 'a') as f:
+        print(f'{log_dir_name}, {IoU}', file=f)
 
     torch.save(model.state_dict(), log_dir_name+'weight.pth')
     writer.close()
@@ -141,9 +143,9 @@ if __name__ == "__main__":
     parser.add_argument('--text',  '-t', default=True, type=bool)
     parser.add_argument('--time',  '-s', default=True, type=bool)
 
-    parser.add_argument('--normalize', default=True, type=bool)
+    parser.add_argument('--normalize', default=False, type=bool)
     parser.add_argument('--margin', default=0.1, type=float)
-    parser.add_argument('--alpha', type=int, default=45, help='angular loss alpha 36 or 45')
+    parser.add_argument('--alpha', type=int, default=36, help='angular loss alpha 36 or 45')
     parser.add_argument('--merge', default='concat', type=str, help='chose vector merge concat or mcb')
 
     parser.add_argument('--weight', default='place', type=str, help='chose place or imagenet trained weight')

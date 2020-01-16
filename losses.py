@@ -23,7 +23,8 @@ class ContrastiveLoss(nn.Module):
         losses = 0.5 * (target.float() * distances +
                         (1 + -1 * target).float() * 
                         F.relu(self.margin - (distances + self.eps).sqrt()).pow(2))
-        return losses.mean() if size_average else losses.sum()
+        loss_embedd = output1.norm(2) + output2.norm(2)
+        return losses.mean() + 0.001 * loss_embedd if size_average else losses.sum()
 
 class TripletLoss(nn.Module):
     """

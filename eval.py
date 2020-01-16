@@ -96,7 +96,7 @@ def predict(dataset, model, cuda, kwards):
             feature = torch.Tensor(model.get_embedding(data).data.cpu().numpy())
             features = torch.cat((features, feature))
     
-    features = features.view(len(dataset), 128)
+    features = features.view(len(dataset), 32)
     print(features.size())
     features = features.numpy()
     print(features.shape)
@@ -107,32 +107,32 @@ def predict(dataset, model, cuda, kwards):
     cos_id_list  = []
     euc_id_list  = []
 
-    cos_scene_id = 0
-    euc_scene_id = 0
+    cos_scene_id = -1
+    euc_scene_id = -1
 
     for i in range(len(dataset)):
         if i == 0: 
+            cos_scene_id +=1
+            euc_scene_id +=1
             cos_sim_list.append(0)
             euc_dis_list.append(0)
 
             cos_id_list.append(cos_scene_id)
             euc_id_list.append(euc_scene_id)
-            cos_scene_id +=1
-            euc_scene_id +=1
             continue
+        else:
+            sim = cos_sim(features[i-1], features[i])
+            dis = eucli_dis(features[i-1], features[i])
 
-        sim = cos_sim(features[i-1], features[i])
-        dis = eucli_dis(features[i-1], features[i])
+            print(f'sim {sim}, {sim.dtype}, {sim.shape}')
+            print(f'dis {dis}, {dis.dtype}, {dis.shape}')
+            cos_sim_list.append(np.round(sim, decimals=3))
+            euc_dis_list.append(np.round(dis, decimals=3))
 
-        print(f'sim {sim}, {sim.dtype}, {sim.shape}')
-        print(f'dis {dis}, {dis.dtype}, {dis.shape}')
-        cos_sim_list.append(sim)
-        euc_dis_list.append(dis)
-
-        if sim < 0.5: cos_scene_id += 1
-        if dis > 0.5: euc_scene_id += 1
-        cos_id_list.append(cos_scene_id)
-        euc_id_list.append(euc_scene_id)
+            if sim < 0.5: cos_scene_id += 1
+            if dis > 0.5: euc_scene_id += 1
+            cos_id_list.append(cos_scene_id)
+            euc_id_list.append(euc_scene_id)
     
     print(f'cos_sim_list length: {len(cos_sim_list)}')
     print(f'euc_dis_list length: {len(euc_dis_list)}')
@@ -150,13 +150,38 @@ def predict(dataset, model, cuda, kwards):
     pred_df.to_csv('./pred.csv', index=False)
     return pred_df
 
-def calc_eval(df):
+def IoU():
     return
 
-if __name__ == "__main__":
-    """ define device """
-    cuda = torch.cuda.is_available()
-    kwards = {'num_workers':1, 'pin_memory': True} if cuda else {}
+def calc_eval(df):
+    total_IoU = 0
 
-    pred_dataset = PredData()
+    for i in range(len(list(df.shot_id))):
+        truth_scene_id = df.at[i, 'scene_id']
+        pred_scene_id = df.at[i, 'cos_scene_id']
+
+        truth_set = set(np.where(df.scene_id == truth_scene_id)[0])
+        pred_set = set(np.where(df.cos_scene_id == pred_scene_id)[0])
+
+        # print('truth_set: ', truth_set)
+        # print('pred_set: ',pred_set)
+
+        union = truth_set | pred_set
+        # print(union)
+
+        intersection = truth_set & pred_set
+        # print(intersection)
+
+        IoU = len(intersection) / len(union)
+        print(IoU)
+        total_IoU += IoU
+    
+    print('IoU: ', total_IoU / len(list(df.shot_id)))
+    
+    return total_IoU / len(list(df.shot_id))
+
+if __name__ == "__main__":
+    df = pd.read_csv('./logs/200117_0221triplet_concat_True-imagenet_True_True_True_epoch100batch128lr0.01_norm_True_sgd_margin0.1'+'/pred.csv')
+    print(df)
+    calc_eval(df)
 
