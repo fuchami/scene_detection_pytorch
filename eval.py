@@ -163,8 +163,8 @@ def calc_eval(df):
         truth_set = set(np.where(df.scene_id == truth_scene_id)[0])
         pred_set = set(np.where(df.cos_scene_id == pred_scene_id)[0])
 
-        # print('truth_set: ', truth_set)
-        # print('pred_set: ',pred_set)
+        print('truth_set: ', truth_set)
+        print('pred_set: ',pred_set)
 
         union = truth_set | pred_set
         # print(union)
@@ -173,15 +173,79 @@ def calc_eval(df):
         # print(intersection)
 
         IoU = len(intersection) / len(union)
-        print(IoU)
+        # print(IoU)
         total_IoU += IoU
     
     print('IoU: ', total_IoU / len(list(df.shot_id)))
     
     return total_IoU / len(list(df.shot_id))
 
+def calc_IoU(truth_list, pred_list):
+    truth_set = set(truth_list)
+    pred_set = set(pred_list)
+
+    union = truth_set | pred_set
+    intersection = truth_set & pred_set
+
+    IoU = len(intersection) / len(union)
+    return IoU
+
+def mIoU(df):
+    left_IoU = 0
+
+    for i in range(len(df.shot_id)):
+        truth_scene_id = df.at[i, 'scene_id']
+
+        truth_list = list(np.where(df.scene_id == truth_scene_id)[0])
+        truth_idx = truth_list.index(i)
+        truth_list = truth_list[truth_idx:]
+        # print('truth_list:', truth_list)
+
+        iou = []
+        for j in range(len(df.shot_id)):
+            pred_scene_id = df.at[j, 'cos_scene_id']
+            pred_list = list(np.where(df.cos_scene_id == pred_scene_id)[0])
+            pred_idx = pred_list.index(j)
+            pred_list = pred_list[pred_idx:]
+            # print('pred_list:', pred_list)
+
+            iou_ = calc_IoU(truth_list, pred_list)
+            # print('mini iou_: ', iou_)
+            iou.append(iou_)
+        # print(max(iou))
+        left_IoU += max(iou)
+
+    left_IoU = left_IoU / len(df.shot_id)
+    print('left_IoU:', left_IoU)
+
+    right_IoU = 0
+    for i in range(len(df.shot_id)):
+        pred_scene_id = df.at[i, 'cos_scene_id']
+        pred_list = list(np.where(df.cos_scene_id == pred_scene_id)[0])
+        pred_idx = pred_list.index(i)
+        pred_list = pred_list[pred_idx:]
+
+        iou = []
+        for j in range(len(df.shot_id)):
+            truth_scene_id = df.at[j, 'scene_id']
+
+            truth_list = list(np.where(df.scene_id == truth_scene_id)[0])
+            truth_idx = truth_list.index(j)
+            truth_list = truth_list[truth_idx:]
+            # print('truth_list:', truth_list)
+
+            iou.append(calc_IoU(truth_list, pred_list))
+        # print(max(iou))
+        right_IoU += max(iou)
+
+    right_IoU = right_IoU / len(df.shot_id)
+    
+    return (left_IoU + right_IoU)/2
+
 if __name__ == "__main__":
-    df = pd.read_csv('./logs/200117_0221triplet_concat_True-imagenet_True_True_True_epoch100batch128lr0.01_norm_True_sgd_margin0.1'+'/pred.csv')
+    df = pd.read_csv('./logs/200117_0435triplet_concat_True-place_True_True_True_epoch300batch128lr0.01_norm_True_sgd_margin0.1'+'/pred.csv')
     print(df)
-    calc_eval(df)
+    # calc_eval(df)
+    miou = mIoU(df)
+    print('mIoU: ',miou)
 
