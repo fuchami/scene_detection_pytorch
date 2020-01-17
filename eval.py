@@ -80,7 +80,7 @@ def predict(dataset, model, cuda, kwards):
     features = torch.zeros(0)
 
     df = dataset.get_df()
-    print(df)
+    # print(df)
 
     data_loader = torch.utils.data.DataLoader(dataset,
                                             batch_size=1,
@@ -97,9 +97,9 @@ def predict(dataset, model, cuda, kwards):
             features = torch.cat((features, feature))
     
     features = features.view(len(dataset), 32)
-    print(features.size())
+    # print(features.size())
     features = features.numpy()
-    print(features.shape)
+    # print(features.shape)
 
     # calculation similarity & distance
     cos_sim_list = []
@@ -124,8 +124,8 @@ def predict(dataset, model, cuda, kwards):
             sim = cos_sim(features[i-1], features[i])
             dis = eucli_dis(features[i-1], features[i])
 
-            print(f'sim {sim}, {sim.dtype}, {sim.shape}')
-            print(f'dis {dis}, {dis.dtype}, {dis.shape}')
+            # print(f'sim {sim}, {sim.dtype}, {sim.shape}')
+            # print(f'dis {dis}, {dis.dtype}, {dis.shape}')
             cos_sim_list.append(np.round(sim, decimals=3))
             euc_dis_list.append(np.round(dis, decimals=3))
 
@@ -134,8 +134,8 @@ def predict(dataset, model, cuda, kwards):
             cos_id_list.append(cos_scene_id)
             euc_id_list.append(euc_scene_id)
     
-    print(f'cos_sim_list length: {len(cos_sim_list)}')
-    print(f'euc_dis_list length: {len(euc_dis_list)}')
+    # print(f'cos_sim_list length: {len(cos_sim_list)}')
+    # print(f'euc_dis_list length: {len(euc_dis_list)}')
 
     pred_df = pd.DataFrame({
         'shot_id':df.shot_id,
@@ -146,12 +146,9 @@ def predict(dataset, model, cuda, kwards):
         'euc_scene_id': euc_id_list
     })
 
-    print(pred_df)
+    # print(pred_df)
     pred_df.to_csv('./pred.csv', index=False)
     return pred_df
-
-def IoU():
-    return
 
 def calc_eval(df):
     total_IoU = 0

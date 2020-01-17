@@ -262,8 +262,8 @@ class TripletMulti(Dataset):
             self.labels_set = set(self.test_df.scene_id.unique())
             self.label_to_indices = {label: np.where(self.test_df.scene_id == label)[0]
                                     for label in self.labels_set}
-            print('self.labels_set:', self.labels_set)
-            print('self.labels_to_indices:', self.label_to_indices)
+            # print('self.labels_set:', self.labels_set)
+            # print('self.labels_to_indices:', self.label_to_indices)
             if normalize:
                 self.start_sec = list(scale(self.test_df.start_sec))
                 self.end_sec   = list(scale(self.test_df.end_sec))
@@ -295,9 +295,9 @@ class TripletMulti(Dataset):
             ]
             for i in range(len(self.test_df))]
             self.test_triplets = triplets
-            print('==================================')
-            print(self.test_triplets)
-            print('==================================')
+            # print('==================================')
+            # print(self.test_triplets)
+            # print('==================================')
 
     def __getitem__(self, index):
         if self.train:

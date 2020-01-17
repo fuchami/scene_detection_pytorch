@@ -14,7 +14,7 @@ from torchvision import transforms
 from torch.utils.tensorboard import SummaryWriter
 
 from trainer import fit
-from eval import PredData, predict, calc_eval
+from eval import PredData, predict, calc_eval, mIoU
 from losses import ContrastiveLoss,TripletLoss,AngularLoss
 from datasets import SiameseMulti,TripletMulti
 from models.networks import SiameseNet,TripletNet
@@ -124,10 +124,10 @@ def main(args):
     print('== eval ==')
     pred_df = predict(pred_dataset, model, cuda, kwards)
     pred_df.to_csv(log_dir_name+'pred.csv', index=False)
-    IoU = calc_eval(pred_df)
+    miou = mIoU(pred_df)
 
     with open('result_IoU.csv', 'a') as f:
-        print(f'{log_dir_name}, {IoU}', file=f)
+        print(f'{log_dir_name}, {miou}', file=f)
 
     torch.save(model.state_dict(), log_dir_name+'weight.pth')
     writer.close()
@@ -138,19 +138,19 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='train SiameseNet or TripletNet')
     parser.add_argument('--model', default='triplet',
                         help='siamese or triplet or angular')
-    parser.add_argument('--image',  '-i', default=True, type=bool)
-    parser.add_argument('--audio',  '-a', default=True, type=bool)
-    parser.add_argument('--text',  '-t', default=True, type=bool)
-    parser.add_argument('--time',  '-s', default=True, type=bool)
+    parser.add_argument('--image',  '-i', default=True)
+    parser.add_argument('--audio',  '-a', default=True)
+    parser.add_argument('--text',  '-t', default=True)
+    parser.add_argument('--time',  '-s', default=True)
 
-    parser.add_argument('--normalize', default=False, type=bool)
+    parser.add_argument('--normalize', default=True)
     parser.add_argument('--margin', default=0.1, type=float)
     parser.add_argument('--alpha', type=int, default=36, help='angular loss alpha 36 or 45')
     parser.add_argument('--merge', default='concat', type=str, help='chose vector merge concat or mcb')
 
     parser.add_argument('--weight', default='place', type=str, help='chose place or imagenet trained weight')
 
-    parser.add_argument('--epochs', '-e', default=100, type=int)
+    parser.add_argument('--epochs', '-e', default=300, type=int)
     parser.add_argument('--batchsize', '-b', default=128, type=int)
     parser.add_argument('--learning_rate', '-r', default=0.01)
     parser.add_argument('--log_interval', '-l', default=100, type=int)

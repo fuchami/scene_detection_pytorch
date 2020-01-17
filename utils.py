@@ -75,14 +75,14 @@ def extract_embeddings(dataloader, model, cuda):
 
             embeddings[k:k+len(data[0][i])] = model.get_embedding(data[0]).data.cpu().numpy()
             labels[k:k+len(data[0][i])] = label.numpy()
-            print('labels', labels)
+            # print('labels', labels)
             k += len(data[0][i])
 
     # feature embedding using t-SNE
-    print(embeddings.shape)
-    print(labels.shape)
+    # print(embeddings.shape)
+    # print(labels.shape)
 
     x_reduces = TSNE(n_components=2, random_state=0).fit_transform(embeddings)
-    print(x_reduces.shape)
+    # print(x_reduces.shape)
     
     return x_reduces, labels
