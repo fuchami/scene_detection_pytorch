@@ -75,7 +75,7 @@ class PredData(Dataset):
     def __len__(self):
         return len(self.df.shot_id)
 
-def predict(dataset, model, cuda, kwards):
+def predict(out_dim, dataset, model, cuda, kwards):
     model.eval()
     features = torch.zeros(0)
 
@@ -96,7 +96,7 @@ def predict(dataset, model, cuda, kwards):
             feature = torch.Tensor(model.get_embedding(data).data.cpu().numpy())
             features = torch.cat((features, feature))
     
-    features = features.view(len(dataset), 32)
+    features = features.view(len(dataset), out_dim)
     # print(features.size())
     features = features.numpy()
     # print(features.shape)

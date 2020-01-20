@@ -31,7 +31,7 @@ class L2Norm(nn.Module):
 
 class EmbeddingNet(nn.Module):
     def __init__(self, image=False, audio=False, text=False, time=False,
-                merge='concat'):
+                merge='concat', outdim=128):
         super(EmbeddingNet, self).__init__()
 
         nn_input = 0
@@ -40,6 +40,7 @@ class EmbeddingNet(nn.Module):
         self.text_feature  = False
         self.timestamp     = False
         self.merge         = merge
+        self.outdim        = outdim
 
         if self.merge == 'concat':
             if image:
@@ -59,9 +60,9 @@ class EmbeddingNet(nn.Module):
         else:
             a_t_input = 768
             a_t_output = 2048
-            nn_input = 16000
+            nn_input = 4096
 
-            self.fc_audio = nn.Sequential(nn.Linear(1280, 768), nn.BatchNorm1d(768), nn.ReLU())
+            self.fc_audio = nn.Sequential(nn.Linear(1280, 768), nn.BatchNorm1d(768), nn.PReLU())
             self.mcb_at = CompactBilinearPooling(a_t_input,a_t_input, a_t_output)
             self.mcb_it = CompactBilinearPooling(a_t_output,a_t_output, nn_input)
 
@@ -71,12 +72,17 @@ class EmbeddingNet(nn.Module):
                                 nn.Linear(512, 128))
         # with BatchNorm
         self.fc_bn = nn.Sequential(nn.Linear(nn_input, 1024), nn.BatchNorm1d(1024), nn.PReLU(),
-                                nn.Linear(1024, 512), nn.BatchNorm1d(512), nn.PReLU(),
-                                nn.Linear(512, 128))
-        # with dropout
-        self.fc_do = nn.Sequential(nn.Linear(nn_input, 1024), nn.PReLU(),
+                                nn.Linear(1024, 256), nn.BatchNorm1d(256), nn.PReLU(),
+                                nn.Linear(256, 128))
+        # outdim32 with BatchNorm & dropout
+        self.fc_bn_do = nn.Sequential(nn.Linear(nn_input, 512), nn.BatchNorm1d(512), nn.PReLU(),
+                                nn.Linear(512, 128), nn.BatchNorm1d(128), nn.PReLU(),
                                 nn.Dropout(0.5),
-                                nn.Linear(1024, 512), nn.PReLU(),
+                                nn.Linear(128, 32))
+
+        # outdim128 with BatchNorm & dropout
+        self.fc_bn_do2 = nn.Sequential(nn.Linear(nn_input, 512), nn.BatchNorm1d(512), nn.PReLU(),
+                                nn.Linear(512, 512), nn.BatchNorm1d(512), nn.PReLU(),
                                 nn.Dropout(0.5),
                                 nn.Linear(512, 128))
     
@@ -101,8 +107,15 @@ class EmbeddingNet(nn.Module):
             at_output = self.mcb_at(x['text'], audio_feature)
             output = self.mcb_it(at_output, x['image'])
 
+            output = torch.cat([output, x['timestamp']], dim=1)
+
         # print('output size' ,output.size()) # ([3, nn_input])
-        output = self.fc_bn(output)
+        if self.outdim == 128:
+            output = self.fc_bn_do2(output)
+        elif self.outdim == 32:
+            output = self.fc_bn_do(output)
+        else:
+            raise ("ERROR!!! please select output dimention !!")
         
         return output
     

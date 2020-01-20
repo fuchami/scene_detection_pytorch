@@ -56,7 +56,9 @@ for txt_path in txt_path_list:
         writer = csv.writer(f)
         writer.writerow(['start', 'end','start_sec', 'end_sec', 'text'])
         for t in txt:
-            text = ''.join(t[9:]).rstrip().replace('\\', ' ')
+            # print(t[9:])
+            text = ''.join(t[9:]).rstrip().replace('\\N', ' ')
+            print(text)
             # 0:00:30.12 → second
 
             h,m,s = t[1].split(':')
@@ -224,7 +226,7 @@ class MultimodalData(object):
             return text[0][0]
 
 #%%  debugで1回だけ
-multimodaldata = MultimodalData('0', '01_From_Pole_to_Pole')
+multimodaldata = MultimodalData('0', '10_Caves')
 
 #%%
 movie_name_list = [os.path.basename(i) for i in sorted(glob.glob('./BBC_Planet_Earth_Dataset/annotations/shots/*'))]

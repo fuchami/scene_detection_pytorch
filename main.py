@@ -32,16 +32,16 @@ def main(args):
     print('test_data_name:', test_data_name)
 
     """ setting logs """
-    now_time = datetime.now().strftime("%y%m%d")
+    now_time = datetime.now().strftime("%y%m")
     base_log_dir_name = f'./logs/{now_time}{args.model}_{args.merge}_{args.image}-{args.weight}_{args.audio}_{args.text}_{args.time}_'
-    base_log_dir_name += f'epoch{args.epochs}batch{args.batchsize}lr{args.learning_rate}_norm_{args.normalize}_{args.optimizer}'
+    base_log_dir_name += f'epoch{args.epochs}batch{args.batchsize}lr{args.learning_rate}_norm_{args.normalize}_{args.optimizer}_outdim{args.outdim}'
     if args.model == 'angular':
         base_log_dir_name += f'_alpha{args.alpha}/'
     else:
         base_log_dir_name += f'_margin{args.margin}/'
     print('base_log_dir_name:', base_log_dir_name)
 
-    log_dir_name = f'{base_log_dir_name}/{test_data_name}'
+    log_dir_name = f'{base_log_dir_name}{test_data_name}'
     
     if not os.path.exists(log_dir_name): os.makedirs(log_dir_name)
     writer = SummaryWriter(log_dir_name)
@@ -70,6 +70,7 @@ def main(args):
     train_loader = torch.utils.data.DataLoader(train_dataset, 
                                             batch_size=args.batchsize,
                                             shuffle=True,
+                                            drop_last=True,
                                             **kwards)
     test_loader = torch.utils.data.DataLoader(test_dataset,
                                             batch_size=args.batchsize,
@@ -91,15 +92,15 @@ def main(args):
     """ build model """
     if args.model == 'siamese':
         model = SiameseNet(image=args.image, audio=args.audio, text=args.text, time=args.time,
-                            merge=args.merge)
+                            merge=args.merge, outdim=args.outdim)
         loss_fn = ContrastiveLoss(args.margin)
     elif args.model == 'triplet':
         model = TripletNet(image=args.image, audio=args.audio, text=args.text, time=args.time,
-                            merge=args.merge)
+                            merge=args.merge, outdim=args.outdim)
         loss_fn = TripletLoss(args.margin)
     elif args.model == 'angular':
         model = TripletNet(image=args.image, audio=args.audio, text=args.text, time=args.time,
-                            merge=args.merge)
+                            merge=args.merge, outdim=args.outdim)
         loss_fn = AngularLoss()
 
     """ tensorboad add graph """
@@ -125,15 +126,15 @@ def main(args):
     fit(train_loader, test_loader, model, loss_fn, optimizer, scheduler, n_epochs, cuda, log_interval, writer)
     
     """ tsne embedding plot """
-    test_embeddings_baseline, test_labels_baseline = extract_embeddings(test_loader, model, cuda)
+    test_embeddings_baseline, test_labels_baseline = extract_embeddings(test_loader, model, cuda, args.outdim)
     plot_embeddings(test_embeddings_baseline, test_labels_baseline, log_dir_name)
 
     """ tensorboard embedding """
-    features, labels, label_imgs= tb_embeddings(tb_loader, test_dataset, model, cuda)
+    features, labels, label_imgs= tb_embeddings(tb_loader, test_dataset, model, cuda, args.outdim)
     writer.add_embedding(features, metadata=labels, label_img=label_imgs)
 
     print('== eval ==')
-    pred_df = predict(pred_dataset, model, cuda, kwards)
+    pred_df = predict(args.outdim, pred_dataset, model, cuda, kwards)
     pred_df.to_csv(log_dir_name+'pred.csv', index=False)
     miou = mIoU(pred_df)
 
@@ -147,7 +148,7 @@ def main(args):
 
 if __name__ == "__main__":
     # All test data cross validation
-    test_path_list = glob.glob('./BBC_Planet_Earth_Dataset/dataset/annotator_0/*')
+    test_path_list = glob.glob('./BBC_Planet_Earth_Dataset/dataset/annotator_0/10*')
     for test_path in test_path_list:
         parser = argparse.ArgumentParser(description='train SiameseNet or TripletNet')
         parser.add_argument('--model', default='triplet',
@@ -156,15 +157,16 @@ if __name__ == "__main__":
         parser.add_argument('--audio',  '-a', default=True)
         parser.add_argument('--text',  '-t', default=True)
         parser.add_argument('--time',  '-s', default=True)
-
         parser.add_argument('--normalize', default=True)
+        parser.add_argument('--outdim', default=128)
+
         parser.add_argument('--margin', default=0.1, type=float)
         parser.add_argument('--alpha', type=int, default=36, help='angular loss alpha 36 or 45')
         parser.add_argument('--merge', default='concat', type=str, help='chose vector merge concat or mcb')
 
         parser.add_argument('--weight', default='place', type=str, help='chose place or imagenet trained weight')
 
-        parser.add_argument('--epochs', '-e', default=300, type=int)
+        parser.add_argument('--epochs', '-e', default=150, type=int)
         parser.add_argument('--batchsize', '-b', default=128, type=int)
         parser.add_argument('--learning_rate', '-r', default=0.01)
         parser.add_argument('--log_interval', '-l', default=100, type=int)

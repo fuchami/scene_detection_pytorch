@@ -10,7 +10,6 @@ from sklearn.manifold import TSNE
 chars = "^<>vo+d"
 markers = [chars[i%7] for i in range(100)]
 
-feature_size = 32
 
 def plot_embeddings(embeddings, targets, save_path, xlim=None, ylim=None):
     plt.figure(figsize=(20,20))
@@ -25,7 +24,7 @@ def plot_embeddings(embeddings, targets, save_path, xlim=None, ylim=None):
     plt.legend()
     plt.savefig(save_path +'embedding.png')
 
-def tb_embeddings(dataloader,dataset, model, cuda):
+def tb_embeddings(dataloader,dataset, model, cuda, outdim):
     print('=== tensorboard embedding ===')
 
     tb_transform = torchvision.transforms.Compose([
@@ -53,16 +52,16 @@ def tb_embeddings(dataloader,dataset, model, cuda):
             label_img = tb_transform(PIL.Image.open(img1_path[0]).convert('RGB'))
             label_imgs = torch.cat((label_imgs, label_img))
     
-    features = features.view(len(dataset), feature_size)
+    features = features.view(len(dataset), outdim)
     label_imgs = label_imgs.view(len(dataset), 3, 50, 50)
     
     return features, labels, label_imgs
 
-def extract_embeddings(dataloader, model, cuda):
+def extract_embeddings(dataloader, model, cuda, outdim):
     print('== extract_embeddings ==')
     with torch.no_grad():
         model.eval()
-        embeddings = np.zeros((len(dataloader.dataset), feature_size))
+        embeddings = np.zeros((len(dataloader.dataset), outdim))
         labels = np.zeros(len(dataloader.dataset))
         k = 0
         for data, target, label, _ in dataloader:
