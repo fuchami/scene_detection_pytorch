@@ -15,7 +15,7 @@ from torchvision import transforms
 from torch.utils.tensorboard import SummaryWriter
 
 from trainer import fit
-from eval import PredData, predict, calc_eval, mIoU
+from eval import PredData, predict, calc_eval, mIoU, add_avg
 from losses import ContrastiveLoss,TripletLoss,AngularLoss
 from datasets import SiameseMulti,TripletMulti
 from models.networks import SiameseNet,TripletNet
@@ -148,7 +148,7 @@ def main(args):
 
 if __name__ == "__main__":
     # All test data cross validation
-    test_path_list = glob.glob('./BBC_Planet_Earth_Dataset/dataset/annotator_0/10*')
+    test_path_list = glob.glob('./BBC_Planet_Earth_Dataset/dataset/annotator_0/*')
     for test_path in test_path_list:
         parser = argparse.ArgumentParser(description='train SiameseNet or TripletNet')
         parser.add_argument('--model', default='triplet',
@@ -158,15 +158,15 @@ if __name__ == "__main__":
         parser.add_argument('--text',  '-t', default=True)
         parser.add_argument('--time',  '-s', default=True)
         parser.add_argument('--normalize', default=True)
-        parser.add_argument('--outdim', default=128)
+        parser.add_argument('--outdim', default=32)
 
         parser.add_argument('--margin', default=0.1, type=float)
         parser.add_argument('--alpha', type=int, default=36, help='angular loss alpha 36 or 45')
-        parser.add_argument('--merge', default='concat', type=str, help='chose vector merge concat or mcb')
+        parser.add_argument('--merge', default='mcb', type=str, help='chose vector merge concat or mcb')
 
         parser.add_argument('--weight', default='place', type=str, help='chose place or imagenet trained weight')
 
-        parser.add_argument('--epochs', '-e', default=150, type=int)
+        parser.add_argument('--epochs', '-e', default=100, type=int)
         parser.add_argument('--batchsize', '-b', default=128, type=int)
         parser.add_argument('--learning_rate', '-r', default=0.01)
         parser.add_argument('--log_interval', '-l', default=100, type=int)
@@ -177,3 +177,13 @@ if __name__ == "__main__":
         args = parser.parse_args()
         main(args)
 
+    # 最後に平均のmIoU値を出す
+    now_time = datetime.now().strftime("%y%m")
+    dir_name = f'./logs/{now_time}{args.model}_{args.merge}_{args.image}-{args.weight}_{args.audio}_{args.text}_{args.time}_'
+    dir_name += f'epoch{args.epochs}batch{args.batchsize}lr{args.learning_rate}_norm_{args.normalize}_{args.optimizer}_outdim{args.outdim}'
+    if args.model == 'angular':
+        dir_name += f'_alpha{args.alpha}/'
+    else:
+        dir_name += f'_margin{args.margin}/'
+    
+    add_avg(dir_name+'mIoU.csv')

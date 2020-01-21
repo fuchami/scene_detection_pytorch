@@ -2,6 +2,7 @@
 
 import numpy as np
 import pandas as pd
+import csv
 
 from sklearn.preprocessing import scale
 
@@ -213,7 +214,7 @@ def mIoU(df):
         left_IoU += max(iou)
 
     left_IoU = left_IoU / len(df.shot_id)
-    print('left_IoU:', left_IoU)
+    # print('left_IoU:', left_IoU)
 
     right_IoU = 0
     for i in range(len(df.shot_id)):
@@ -239,10 +240,25 @@ def mIoU(df):
     
     return (left_IoU + right_IoU)/2
 
+def add_avg(df_path):
+    avg_miou = 0
+    with open(df_path, 'r') as f:
+        reader = csv.reader(f)
+        for row in reader:
+            avg_miou += float(row[1])
+    
+    avg_miou = avg_miou / 11
+    print('average mIoU:', avg_miou)
+    
+    with open(df_path, 'a') as f:
+        print(f'average, {avg_miou}', file=f)
+
 if __name__ == "__main__":
-    df = pd.read_csv('./logs/200117_0435triplet_concat_True-place_True_True_True_epoch300batch128lr0.01_norm_True_sgd_margin0.1'+'/pred.csv')
+    df = './logs/2001triplet_concat_True-place_True_True_True_epoch300batch128lr0.01_norm_True_sgd_outdim32_margin0.1/mIoU.csv'
+    add_avg(df)
+
+    df = pd.read_csv('./logs/2001triplet_concat_True-place_True_True_True_epoch300batch128lr0.01_norm_True_sgd_outdim32_margin0.1/01_From_Pole_to_Polepred.csv')
     print(df)
     # calc_eval(df)
-    miou = mIoU(df)
-    print('mIoU: ',miou)
-
+    # miou = mIoU(df)
+    # print('mIoU: ',miou)
