@@ -394,7 +394,18 @@ class TripletMulti(Dataset):
     def load_audio(self, index):
         aud = np.load(self.audios[index])
         aud = torch.from_numpy(aud)
-        aud = torch.squeeze(aud.view(aud.size()[0], -1), dim=0)
+
+        # Flatten [10, 128] -> [1280]
+        # aud = torch.squeeze(aud.view(aud.size()[0], -1), dim=0)
+
+        # 平均 [10, 128] -> [128]に
+        # aud = torch.mean(aud, 1)
+
+        # 最大値 [10, 128] -> [128]に
+        aud = torch.max(aud, 1).values
+
+        # print('aud.size():', aud.size())
+        aud = torch.squeeze(aud, dim=0)
         return aud
 
     def load_text(self, index):

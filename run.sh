@@ -1,11 +1,16 @@
 #!/bin/bash
-python main.py -i True -a True -t True -s True --merge concat --model triplet
-python main.py -i True -a True -t True -s True --merge mcb --model triplet
 
-python main.py -i True -a True -t True -s True --merge concat --model siamese
+# マルチモーダルの比較
+python main.py --model triplet --image --merge concat
+python main.py --model triplet --image --audio --merge concat
+python main.py --model triplet --image --text --merge concat
+python main.py --model triplet --image --time --merge concat
 
-python main.py -i True -a False -t False -s True --merge concat --model triplet
-python main.py -i True -a True -t False -s True --merge concat --model triplet
-python main.py -i True -a False -t True -s True --merge concat --model triplet
-python main.py -i True -a True -t True -s True --merge concat --model triplet
+python main.py --model triplet --image --audio --text --merge concat
+python main.py --model triplet --image --audio --text --time --merge concat
 
+# out unitの比較
+python main.py --model triplet --image --audio --text --time --outdim 64 --merge concat
+
+# mcbの導入
+python main.py --model triplet --image --audio --text --time --merge mcb

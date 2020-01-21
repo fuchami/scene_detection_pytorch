@@ -165,7 +165,7 @@ class ExtraFeature(object):
                 with torch.no_grad():
                     aud_feature = self.audio_extractor.forward(aud)
 
-                aud_feature = aud_feature.view(1, 20, -1)
+                aud_feature = aud_feature.view(1, 10, -1)
                 print('audio extract size: ', aud_feature.size()) # [bs, ]
                 aud_feature = aud_feature.cpu().detach().numpy()
                 np.save(aud_feature_path, aud_feature)

@@ -33,7 +33,7 @@ def main(args):
 
     """ setting logs """
     now_time = datetime.now().strftime("%y%m")
-    base_log_dir_name = f'./logs/{now_time}{args.model}_{args.merge}_{args.image}-{args.weight}_{args.audio}_{args.text}_{args.time}_'
+    base_log_dir_name = f'./logs/{args.model}_{args.merge}_{args.image}-{args.weight}_{args.audio}_{args.text}_{args.time}_'
     base_log_dir_name += f'epoch{args.epochs}batch{args.batchsize}lr{args.learning_rate}_norm_{args.normalize}_{args.optimizer}_outdim{args.outdim}'
     if args.model == 'angular':
         base_log_dir_name += f'_alpha{args.alpha}/'
@@ -148,21 +148,21 @@ def main(args):
 
 if __name__ == "__main__":
     # All test data cross validation
-    test_path_list = glob.glob('./BBC_Planet_Earth_Dataset/dataset/annotator_0/*')
+    test_path_list = glob.glob('./BBC_Planet_Earth_Dataset/dataset/annotator_0/10*')
     for test_path in test_path_list:
         parser = argparse.ArgumentParser(description='train SiameseNet or TripletNet')
         parser.add_argument('--model', default='triplet',
                             help='siamese or triplet or angular')
-        parser.add_argument('--image',  '-i', default=True)
-        parser.add_argument('--audio',  '-a', default=True)
-        parser.add_argument('--text',  '-t', default=True)
-        parser.add_argument('--time',  '-s', default=True)
-        parser.add_argument('--normalize', default=True)
-        parser.add_argument('--outdim', default=32)
+        parser.add_argument('--image', action='store_true')
+        parser.add_argument('--audio', action='store_true')
+        parser.add_argument('--text', action='store_true')
+        parser.add_argument('--time', action='store_true')
+        parser.add_argument('--normalize', action='store_false')
+        parser.add_argument('--outdim', default=32, type=int)
 
         parser.add_argument('--margin', default=0.1, type=float)
         parser.add_argument('--alpha', type=int, default=36, help='angular loss alpha 36 or 45')
-        parser.add_argument('--merge', default='mcb', type=str, help='chose vector merge concat or mcb')
+        parser.add_argument('--merge', default='concat', type=str, help='chose vector merge concat or mcb')
 
         parser.add_argument('--weight', default='place', type=str, help='chose place or imagenet trained weight')
 
