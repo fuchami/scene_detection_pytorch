@@ -19,8 +19,8 @@ def eucli_dis(v1, v2):
 
 class PredData(Dataset):
     def __init__(self, test_path='./BBC_Planet_Earth_Dataset/dataset/annotator_0/01_From_Pole_to_Pole.csv',
-                    train=True, image=True, timestamp=True, audio=True, text=True,
-                    weight='place', normalize=True):
+                    train=False, image=False, timestamp=False, audio=False, text=False,
+                    weight='place', normalize=False):
 
         self.df = pd.read_csv(test_path)
         self.labels = list(self.df.scene_id)
@@ -29,6 +29,10 @@ class PredData(Dataset):
                                 for label in self.labels_set}
         # print('self.label_set:', self.labels_set)
         # print('self.labels_to_indices:',  self.label_to_indices)
+        self.image_load     = image
+        self.timestamp_load = timestamp
+        self.audio_load     = audio 
+        self.text_load      = text 
 
         if normalize:
             self.start_sec = list(scale(self.df.start_sec))
@@ -54,22 +58,28 @@ class PredData(Dataset):
         data = {}
 
         """ load image """
-        img = np.load(self.images[index])
-        img = torch.from_numpy(img)
-        data['image'] = torch.squeeze(img, dim=0)
+        if self.image_load:
+            img = np.load(self.images[index])
+            img = torch.from_numpy(img)
+            data['image'] = torch.squeeze(img, dim=0)
 
         """ load audio """
-        aud = np.load(self.audios[index])
-        aud = torch.from_numpy(aud)
-        data['audio'] = torch.squeeze(aud.view(aud.size()[0], -1), dim=0)
+        if self.audio_load:
+            aud = np.load(self.audios[index])
+            aud = torch.from_numpy(aud)
+            # data['audio'] = torch.squeeze(aud.view(aud.size()[0], -1), dim=0)
+            aud = torch.max(aud, 1).values
+            data['audio'] = torch.squeeze(aud, dim=0)
 
         """ load text """
-        txt = np.load(self.texts[index])
-        data['text'] = torch.from_numpy(txt)
+        if self.text_load:
+            txt = np.load(self.texts[index])
+            data['text'] = torch.from_numpy(txt)
 
         """ load timestamp """
-        timestamp = [self.shot_sec[index], self.start_sec[index], self.end_sec[index]]
-        data['timestamp'] = torch.tensor(timestamp)
+        if self.timestamp_load:
+            timestamp = [self.shot_sec[index], self.start_sec[index], self.end_sec[index]]
+            data['timestamp'] = torch.tensor(timestamp)
 
         return data
 
@@ -254,7 +264,7 @@ def add_avg(df_path):
         print(f'average, {avg_miou}', file=f)
 
 if __name__ == "__main__":
-    df = './logs/2001triplet_concat_True-place_True_True_True_epoch300batch128lr0.01_norm_True_sgd_outdim32_margin0.1/mIoU.csv'
+    df = './logs/2001triplet_concat_True-place_False_False_True_epoch100batch128lr0.01_norm_True_sgd_outdim32_margin0.1/mIoU.csv'
     add_avg(df)
 
     df = pd.read_csv('./logs/2001triplet_concat_True-place_True_True_True_epoch300batch128lr0.01_norm_True_sgd_outdim32_margin0.1/01_From_Pole_to_Polepred.csv')
