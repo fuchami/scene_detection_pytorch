@@ -126,17 +126,18 @@ def main(args):
     fit(train_loader, test_loader, model, loss_fn, optimizer, scheduler, n_epochs, cuda, log_interval, writer)
     
     """ tsne embedding plot """
-    test_embeddings_baseline, test_labels_baseline = extract_embeddings(test_loader, model, cuda, args.outdim)
-    plot_embeddings(test_embeddings_baseline, test_labels_baseline, log_dir_name)
+    # test_embeddings_baseline, test_labels_baseline = extract_embeddings(test_loader, model, cuda, args.outdim)
+    # plot_embeddings(test_embeddings_baseline, test_labels_baseline, log_dir_name)
 
     """ tensorboard embedding """
-    features, labels, label_imgs= tb_embeddings(tb_loader, test_dataset, model, cuda, args.outdim)
-    writer.add_embedding(features, metadata=labels, label_img=label_imgs)
+    # features, labels, label_imgs= tb_embeddings(tb_loader, test_dataset, model, cuda, args.outdim)
+    # writer.add_embedding(features, metadata=labels, label_img=label_imgs)
 
-    print('== eval ==')
+    print('======= eval =======')
     pred_df = predict(args.outdim, pred_dataset, model, cuda, kwards)
     pred_df.to_csv(log_dir_name+'pred.csv', index=False)
     miou = mIoU(pred_df)
+    print('mIoU:', miou)
 
     with open(f'{base_log_dir_name}/mIoU.csv', 'a') as f:
         print(f'{log_dir_name}, {miou}', file=f)
@@ -144,12 +145,13 @@ def main(args):
     torch.save(model.state_dict(), log_dir_name+'weight.pth')
     writer.close()
 
-    print('== finished ==')
+    print('=================== finished ===================')
 
 if __name__ == "__main__":
     # All test data cross validation
-    test_path_list = glob.glob('./BBC_Planet_Earth_Dataset/dataset/annotator_0/10*')
+    test_path_list = sorted(glob.glob('./BBC_Planet_Earth_Dataset/dataset/annotator_0/*'))
     for test_path in test_path_list:
+        print('****************************************************************************************************')
         parser = argparse.ArgumentParser(description='train SiameseNet or TripletNet')
         parser.add_argument('--model', default='triplet',
                             help='siamese or triplet or angular')
@@ -166,7 +168,7 @@ if __name__ == "__main__":
 
         parser.add_argument('--weight', default='place', type=str, help='chose place or imagenet trained weight')
 
-        parser.add_argument('--epochs', '-e', default=100, type=int)
+        parser.add_argument('--epochs', '-e', default=300, type=int)
         parser.add_argument('--batchsize', '-b', default=128, type=int)
         parser.add_argument('--learning_rate', '-r', default=0.01)
         parser.add_argument('--log_interval', '-l', default=100, type=int)
@@ -178,8 +180,8 @@ if __name__ == "__main__":
         main(args)
 
     # 最後に平均のmIoU値を出す
-    now_time = datetime.now().strftime("%y%m")
-    dir_name = f'./logs/{now_time}{args.model}_{args.merge}_{args.image}-{args.weight}_{args.audio}_{args.text}_{args.time}_'
+    # now_time = datetime.now().strftime("%y%m")
+    dir_name = f'./logs/{args.model}_{args.merge}_{args.image}-{args.weight}_{args.audio}_{args.text}_{args.time}_'
     dir_name += f'epoch{args.epochs}batch{args.batchsize}lr{args.learning_rate}_norm_{args.normalize}_{args.optimizer}_outdim{args.outdim}'
     if args.model == 'angular':
         dir_name += f'_alpha{args.alpha}/'
@@ -187,3 +189,4 @@ if __name__ == "__main__":
         dir_name += f'_margin{args.margin}/'
     
     add_avg(dir_name+'mIoU.csv')
+    print('end...****************************************************************************************************')

@@ -168,8 +168,18 @@ class SiameseMulti(Dataset):
             aud1 = torch.from_numpy(aud1) # torch.Size([1, 20, 128])
             aud2 = torch.from_numpy(aud2)
 
-            aud1 = torch.squeeze(aud1.view(aud1.size()[0], -1), dim=0)
-            aud2 = torch.squeeze(aud2.view(aud2.size()[0], -1), dim=0)
+            # aud1 = torch.squeeze(aud1.view(aud1.size()[0], -1), dim=0)
+            # aud2 = torch.squeeze(aud2.view(aud2.size()[0], -1), dim=0)
+
+            # 最大値 [10, 128] -> [128]へ
+            aud1 = torch.max(aud1, 1).values
+            aud1 = torch.squeeze(aud1, dim=0)
+
+            aud2 = torch.max(aud2, 1).values
+            aud2 = torch.squeeze(aud2, dim=0)
+
+            print('aud1.size(): ', aud1.size())
+
             data1['audio'] = aud1
             data2['audio'] = aud2
         
@@ -240,6 +250,7 @@ class TripletMulti(Dataset):
             # print('self.label_set:', self.labels_set)
             # print('self.labels_to_indices:',  self.label_to_indices)
             if normalize:
+                print('yES! Normalize!!!!!!!!!!')
                 self.start_sec = list(scale(self.train_df.start_sec))
                 self.end_sec   = list(scale(self.train_df.end_sec))
                 self.shot_sec  = list(scale(self.train_df.shot_sec))
@@ -265,6 +276,7 @@ class TripletMulti(Dataset):
             # print('self.labels_set:', self.labels_set)
             # print('self.labels_to_indices:', self.label_to_indices)
             if normalize:
+                print('yES! Normalize!!!!!!!!!!')
                 self.start_sec = list(scale(self.test_df.start_sec))
                 self.end_sec   = list(scale(self.test_df.end_sec))
                 self.shot_sec  = list(scale(self.test_df.shot_sec))
