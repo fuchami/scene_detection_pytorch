@@ -58,14 +58,15 @@ class EmbeddingNet(nn.Module):
 
             print('concat nn_input:', nn_input)
         else: # 新しいmcb
-            i_t_input = 768
-            mcb_output = 4096
-            nn_input = mcb_output+128 # add audio 
+            mcb_input = 128
+            mcb_output = 512
+
+            nn_input = mcb_output+2048 # add image 
             nn_input = nn_input+3 # add timestamp
             print('mcb nn_input:', nn_input)
 
-            self.fc_image = nn.Sequential(nn.Linear(2048, 768), nn.BatchNorm1d(768), nn.PReLU())
-            self.mcb_it = CompactBilinearPooling(i_t_input, i_t_input, mcb_output)
+            self.fc_image = nn.Sequential(nn.Linear(768, 128), nn.BatchNorm1d(128), nn.PReLU())
+            self.mcb_it = CompactBilinearPooling(mcb_input, mcb_input, mcb_output)
 
         # normal
         self.fc = nn.Sequential(nn.Linear(nn_input, 1024), nn.PReLU(),
@@ -105,10 +106,11 @@ class EmbeddingNet(nn.Module):
                 concat_list.append(x['timestamp'])
             output = torch.cat(concat_list, dim=1)
         else:
-            image_feature = self.fc_image(x['image'])
-            output = self.mcb_it(image_feature, x['text'])
+            # image + mcb(text+aud) + timestamp
+            text_feature = self.fc_text(x['text'])
+            output = self.mcb(text_feature, x['audio'])
 
-            output = torch.cat([output, x['audio'], x['timestamp']], dim=1)
+            output = torch.cat([x['image'], output x['timestamp']], dim=1)
 
         # print('output size' ,output.size()) # ([3, nn_input])
         if self.outdim == 32:

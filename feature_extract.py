@@ -107,7 +107,13 @@ class ExtraFeature(object):
                 with torch.no_grad():
                     txt_emb = self.bert(txt)[0][0]
 
-                txt_emb = torch.mean(txt_emb, dim=0)
+                # mean
+                txt_emb_mean = torch.mean(txt_emb, dim=0)
+                print('text extract size Mean:', txt_emb_mean.size())
+
+                # マックスプーリング
+                txt_emb = torch.max(txt_emb, dim=0).values
+
                 print('text extract size:', txt_emb.size())
                 txt_emb = txt_emb.cpu().detach().numpy()
                 np.save(txt_feature_path,  txt_emb)
