@@ -2,6 +2,7 @@
 /.vscode/
 /logs/
 /log100epc/
+/log300epc/
 /oldlogs/
 .DS_Store
 

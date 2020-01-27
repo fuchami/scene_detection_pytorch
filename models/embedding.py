@@ -55,39 +55,53 @@ class EmbeddingNet(nn.Module):
             if time:
                 self.timestamp = True
                 nn_input += 3
+            # normal
+            self.fc = nn.Sequential(nn.Linear(nn_input, 1024), nn.PReLU(),
+                                    nn.Linear(1024, 512), nn.PReLU(),
+                                    nn.Linear(512, 128))
+            # with BatchNorm
+            self.fc_bn = nn.Sequential(nn.Linear(nn_input, 1024), nn.BatchNorm1d(1024), nn.PReLU(),
+                                    nn.Linear(1024, 256), nn.BatchNorm1d(256), nn.PReLU(),
+                                    nn.Linear(256, 128))
+
+            # outdim32 with BatchNorm & dropout BEST!
+            self.fc_bn_do = nn.Sequential(nn.Linear(nn_input, 512), nn.BatchNorm1d(512), nn.PReLU(),
+                                    nn.Linear(512, 128), nn.BatchNorm1d(128), nn.PReLU(),
+                                    nn.Dropout(0.5),
+                                    nn.Linear(128, 32))
+
+            # outdim with BatchNorm & dropout
+            self.fc_bn_do2 = nn.Sequential(nn.Linear(nn_input, 512), nn.BatchNorm1d(512), nn.PReLU(),
+                                    nn.Linear(512, 128), nn.BatchNorm1d(128), nn.PReLU(),
+                                    nn.Dropout(0.5),
+                                nn.Linear(128, 64))
 
             print('concat nn_input:', nn_input)
-        else: # 新しいmcb
-            mcb_input = 128
-            mcb_output = 512
+        elif self.merge == 'max':
+            print('feature max pooling!!!')
 
-            nn_input = mcb_output+2048 # add image 
-            nn_input = nn_input+3 # add timestamp
+            self.fc_img = nn.Sequential(nn.Linear(2048, 128), nn.BatchNorm1d(128), nn.PReLU())
+            self.fc_txt = nn.Sequential(nn.Linear(768, 128), nn.BatchNorm1d(128), nn.PReLU())
+
+            self.emb_fc = nn.Sequential(nn.Linear(128+3, 64), nn.BatchNorm1d(64), nn.PReLU(),
+                                nn.Dropout(0.5),
+                                nn.Linear(64, 32))
+            return
+        else: # 新しいmcb(image + text) + maxpool
+            print('mcb + maxpooling!!!')
+            mcb_input = 768
+            mcb_output = 128
+
+            nn_input = mcb_input+3 # add timestamp
             print('mcb nn_input:', nn_input)
 
-            self.fc_image = nn.Sequential(nn.Linear(768, 128), nn.BatchNorm1d(128), nn.PReLU())
-            self.mcb_it = CompactBilinearPooling(mcb_input, mcb_input, mcb_output)
+            self.fc_img = nn.Sequential(nn.Linear(2048, 768), nn.BatchNorm1d(128), nn.PReLU())
+            self.mcb = CompactBilinearPooling(mcb_input, mcb_input, mcb_output)
 
-        # normal
-        self.fc = nn.Sequential(nn.Linear(nn_input, 1024), nn.PReLU(),
-                                nn.Linear(1024, 512), nn.PReLU(),
-                                nn.Linear(512, 128))
-        # with BatchNorm
-        self.fc_bn = nn.Sequential(nn.Linear(nn_input, 1024), nn.BatchNorm1d(1024), nn.PReLU(),
-                                nn.Linear(1024, 256), nn.BatchNorm1d(256), nn.PReLU(),
-                                nn.Linear(256, 128))
-
-        # outdim32 with BatchNorm & dropout BEST!
-        self.fc_bn_do = nn.Sequential(nn.Linear(nn_input, 512), nn.BatchNorm1d(512), nn.PReLU(),
-                                nn.Linear(512, 128), nn.BatchNorm1d(128), nn.PReLU(),
+            self.emb_fc = nn.Sequential(nn.Linear(128+3, 64), nn.BatchNorm1d(64), nn.PReLU(),
                                 nn.Dropout(0.5),
-                                nn.Linear(128, 32))
-
-        # outdim with BatchNorm & dropout
-        self.fc_bn_do2 = nn.Sequential(nn.Linear(nn_input, 512), nn.BatchNorm1d(512), nn.PReLU(),
-                                nn.Linear(512, 128), nn.BatchNorm1d(128), nn.PReLU(),
-                                nn.Dropout(0.5),
-                                nn.Linear(128, 64))
+                                nn.Linear(64, 32))
+            return
     
     def forward(self, x):
         if self.merge == 'concat':
@@ -105,20 +119,34 @@ class EmbeddingNet(nn.Module):
             if self.timestamp:
                 concat_list.append(x['timestamp'])
             output = torch.cat(concat_list, dim=1)
+            if self.outdim == 32:
+                output = self.fc_bn_do(output)
+            elif self.outdim == 64:
+                output = self.fc_bn_do2(output)
+            else:
+                raise ("ERROR!!! please select output dimention !!")
+
+        elif self.merge == 'max':
+            """ max pooling """
+            img_feature = self.fc_img(x['image'])
+            txt_feature = self.fc_txt(x['text'])
+
+            txt_aud_max = torch.max(x['audio'], txt_feature)
+            # print('debug:', txt_aud_max.size())
+            img_txt_aud_max = torch.max(img_feature, txt_aud_max)
+            # print('debug2:', img_txt_aud_max.size())
+
+            output = torch.cat([img_txt_aud_max, x['timestamp']], dim=1)
+            output = self.emb_fc(output)
         else:
             # image + mcb(text+aud) + timestamp
-            text_feature = self.fc_text(x['text'])
-            output = self.mcb(text_feature, x['audio'])
+            img_feature = self.fc_img(x['image'])
+            mcb_out = self.mcb(img_feature, x['text'])
 
-            output = torch.cat([x['image'], output x['timestamp']], dim=1)
-
-        # print('output size' ,output.size()) # ([3, nn_input])
-        if self.outdim == 32:
-            output = self.fc_bn_do(output)
-        elif self.outdim == 64:
-            output = self.fc_bn_do2(output)
-        else:
-            raise ("ERROR!!! please select output dimention !!")
+            # mcb + audio maxpool
+            output = torch.max(mcb_out, x['audio'])
+            output = torch.cat([output, x['timestamp']], dim=1)
+            output = self.emb_fc(output)
         
         return output
     

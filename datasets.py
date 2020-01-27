@@ -178,7 +178,7 @@ class SiameseMulti(Dataset):
             aud2 = torch.max(aud2, 1).values
             aud2 = torch.squeeze(aud2, dim=0)
 
-            print('aud1.size(): ', aud1.size())
+            # print('aud1.size(): ', aud1.size())
 
             data1['audio'] = aud1
             data2['audio'] = aud2
