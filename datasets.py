@@ -415,9 +415,8 @@ class TripletMulti(Dataset):
 
         # 最大値 [10, 128] -> [128]に
         aud = torch.max(aud, 1).values
-
-        # print('aud.size():', aud.size())
         aud = torch.squeeze(aud, dim=0)
+        # print('aud.size():', aud.size())
         return aud
 
     def load_text(self, index):

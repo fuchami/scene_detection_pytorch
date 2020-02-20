@@ -35,6 +35,7 @@ class PredData(Dataset):
         self.text_load      = text 
 
         if normalize:
+            print('eval normalize!')
             self.start_sec = list(scale(self.df.start_sec))
             self.end_sec   = list(scale(self.df.end_sec))
             self.shot_sec  = list(scale(self.df.shot_sec))
@@ -67,7 +68,11 @@ class PredData(Dataset):
         if self.audio_load:
             aud = np.load(self.audios[index])
             aud = torch.from_numpy(aud)
+
+            # flatten 10,128 -> 1280
             # data['audio'] = torch.squeeze(aud.view(aud.size()[0], -1), dim=0)
+
+            # maxpool 10,128 -> 128
             aud = torch.max(aud, 1).values
             data['audio'] = torch.squeeze(aud, dim=0)
 

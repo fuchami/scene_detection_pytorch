@@ -126,12 +126,12 @@ def main(args):
     fit(train_loader, test_loader, model, loss_fn, optimizer, scheduler, n_epochs, cuda, log_interval, writer)
     
     """ tsne embedding plot """
-    # test_embeddings_baseline, test_labels_baseline = extract_embeddings(test_loader, model, cuda, args.outdim)
-    # plot_embeddings(test_embeddings_baseline, test_labels_baseline, log_dir_name)
+    test_embeddings_baseline, test_labels_baseline = extract_embeddings(test_loader, model, cuda, args.outdim)
+    plot_embeddings(test_embeddings_baseline, test_labels_baseline, log_dir_name)
 
     """ tensorboard embedding """
-    # features, labels, label_imgs= tb_embeddings(tb_loader, test_dataset, model, cuda, args.outdim)
-    # writer.add_embedding(features, metadata=labels, label_img=label_imgs)
+    features, labels, label_imgs= tb_embeddings(tb_loader, test_dataset, model, cuda, args.outdim)
+    writer.add_embedding(features, metadata=labels, label_img=label_imgs)
 
     print('======= eval =======')
     pred_df = predict(args.outdim, pred_dataset, model, cuda, kwards)
@@ -149,7 +149,7 @@ def main(args):
 
 if __name__ == "__main__":
     # All test data cross validation
-    test_path_list = sorted(glob.glob('./BBC_Planet_Earth_Dataset/dataset/annotator_0/*'))
+    test_path_list = sorted(glob.glob('./BBC_Planet_Earth_Dataset/dataset/annotator_0/09*'))
     for test_path in test_path_list:
         print('****************************************************************************************************')
         parser = argparse.ArgumentParser(description='train SiameseNet or TripletNet')
@@ -169,7 +169,7 @@ if __name__ == "__main__":
         parser.add_argument('--weight', default='place', type=str, help='chose place or imagenet trained weight')
 
         parser.add_argument('--epochs', '-e', default=300, type=int)
-        parser.add_argument('--batchsize', '-b', default=128, type=int)
+        parser.add_argument('--batchsize', '-b', default=64, type=int)
         parser.add_argument('--learning_rate', '-r', default=0.01)
         parser.add_argument('--log_interval', '-l', default=100, type=int)
         parser.add_argument('--optimizer', '-o' ,default='sgd')

@@ -77,13 +77,15 @@ class EmbeddingNet(nn.Module):
                                 nn.Linear(128, 64))
 
             print('concat nn_input:', nn_input)
-        elif self.merge == 'max':
+        elif self.merge == 'max': # 760でmaxpool
             print('feature max pooling!!!')
 
             self.fc_img = nn.Sequential(nn.Linear(2048, 128), nn.BatchNorm1d(128), nn.PReLU())
             self.fc_txt = nn.Sequential(nn.Linear(768, 128), nn.BatchNorm1d(128), nn.PReLU())
+            # self.fc_aud = nn.Sequential(nn.Linear(1280, 768), nn.BatchNorm1d(768), nn.PReLU())
 
-            self.emb_fc = nn.Sequential(nn.Linear(128+3, 64), nn.BatchNorm1d(64), nn.PReLU(),
+            self.emb_fc = nn.Sequential(nn.Linear(128+3, 90), nn.BatchNorm1d(90), nn.PReLU(),
+                                nn.Linear(90, 64), nn.BatchNorm1d(64), nn.PReLU(),
                                 nn.Dropout(0.5),
                                 nn.Linear(64, 32))
             return
@@ -92,10 +94,10 @@ class EmbeddingNet(nn.Module):
             mcb_input = 768
             mcb_output = 128
 
-            nn_input = mcb_input+3 # add timestamp
+            nn_input = mcb_output+3 # add timestamp
             print('mcb nn_input:', nn_input)
 
-            self.fc_img = nn.Sequential(nn.Linear(2048, 768), nn.BatchNorm1d(128), nn.PReLU())
+            self.fc_img = nn.Sequential(nn.Linear(2048, 768), nn.BatchNorm1d(768), nn.PReLU())
             self.mcb = CompactBilinearPooling(mcb_input, mcb_input, mcb_output)
 
             self.emb_fc = nn.Sequential(nn.Linear(128+3, 64), nn.BatchNorm1d(64), nn.PReLU(),
@@ -130,9 +132,10 @@ class EmbeddingNet(nn.Module):
             """ max pooling """
             img_feature = self.fc_img(x['image'])
             txt_feature = self.fc_txt(x['text'])
+            # aud_feature = self.fc_aud(x['audio'])
 
-            txt_aud_max = torch.max(x['audio'], txt_feature)
-            # print('debug:', txt_aud_max.size())
+            txt_aud_max = torch.max(txt_feature, x['audio'])
+            #print('debug:', txt_aud_max.size())
             img_txt_aud_max = torch.max(img_feature, txt_aud_max)
             # print('debug2:', img_txt_aud_max.size())
 
